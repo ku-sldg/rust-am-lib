@@ -171,3 +171,21 @@ pub struct ASPRunResponse {
     pub SUCCESS:  bool,
     pub PAYLOAD:  RawEv
 }
+
+
+pub fn successfulASPRunResponse (evidence : RawEv) -> ASPRunResponse {
+    ASPRunResponse { TYPE: "RESPONSE".to_string(),
+                     ACTION: "ASP_RUN".to_string(),
+                     SUCCESS: true,
+                     PAYLOAD:  evidence}
+}
+
+// Currently the reason string is ignored, but eventually
+// should be incorporated into the response.
+pub fn failureASPRunResponse (_reason :String) -> ASPRunResponse {
+
+    ASPRunResponse { TYPE: "RESPONSE".to_string(),
+                     ACTION: "ASP_RUN".to_string(),
+                     SUCCESS: false,
+                     PAYLOAD:  RawEv::RawEv(Vec::new())}
+}
