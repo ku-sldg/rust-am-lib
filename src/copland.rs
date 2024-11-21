@@ -183,6 +183,7 @@ pub fn successfulASPRunResponse (evidence : RawEv) -> ASPRunResponse {
 // Currently the reason string is ignored, but eventually
 // should be incorporated into the response.
 pub fn failureASPRunResponse (_reason :String) -> ASPRunResponse {
+    eprintln!("Error: {_reason}");
 
     ASPRunResponse { TYPE: "RESPONSE".to_string(),
                      ACTION: "ASP_RUN".to_string(),
