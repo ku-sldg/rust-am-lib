@@ -1,8 +1,10 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use std::collections::HashMap;
+use anyhow::Result;
+use core::panic;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub type Plc = String;
 type N_ID = String;
@@ -15,7 +17,7 @@ pub struct ASP_PARAMS {
     pub ASP_ID: ASP_ID,
     pub ASP_ARGS: ASP_ARGS,
     pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID
+    pub ASP_TARG_ID: TARG_ID,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -25,7 +27,7 @@ pub enum FWD {
     ENCR,
     EXTD(String),
     KILL,
-    KEEP
+    KEEP,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,13 +36,13 @@ pub enum Evidence {
     mt,
     nn(N_ID),
     uu(Plc, FWD, ASP_PARAMS, Box<Evidence>),
-    ss(Box<Evidence>, Box<Evidence>)
+    ss(Box<Evidence>, Box<Evidence>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum SP {
     ALL,
-    NONE
+    NONE,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -51,9 +53,8 @@ pub enum ASP {
     ASPC(SP, FWD, ASP_PARAMS),
     SIG,
     HSH,
-    ENC(Plc)
+    ENC(Plc),
 }
-
 
 /*
 impl Serialize for ASP {
@@ -84,18 +85,18 @@ pub enum Term {
     att(Plc, Box<Term>),
     lseq(Box<Term>, Box<Term>),
     bseq(Split, Box<Term>, Box<Term>),
-    bpar(Split, Box<Term>, Box<Term>)
+    bpar(Split, Box<Term>, Box<Term>),
 }
 
 //type BS = bytestring::ByteString;
 
-type RawEvT = Vec<String>;  //Vec<BS>;
+type RawEvT = Vec<String>; //Vec<BS>;
 
 #[derive(Serialize, Deserialize, Debug)]
 //#[serde(untagged)]
 //#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
 pub enum RawEv {
-    RawEv(RawEvT)
+    RawEv(RawEvT),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -106,87 +107,126 @@ pub enum AppResultC {
     ggc_app(Plc, ASP_PARAMS, RawEv, Box<AppResultC>),
     hhc_app(Plc, ASP_PARAMS, String, Box<AppResultC>),
     eecc_app(Plc, ASP_PARAMS, String, Box<AppResultC>),
-    ssc_app(Box<AppResultC>, Box<AppResultC>)
+    ssc_app(Box<AppResultC>, Box<AppResultC>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
-    pub Session_Plc:  Plc,
-    pub Plc_Mapping:  HashMap<Plc, String>,
-    pub PubKey_Mapping:  HashMap<Plc, String>
+    pub Session_Plc: Plc,
+    pub Plc_Mapping: HashMap<Plc, String>,
+    pub PubKey_Mapping: HashMap<Plc, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolRunRequest {
-    pub TYPE:  String,
-    pub ACTION:  String,
-    pub REQ_PLC:  Plc,
-    pub TERM:  Term,
-    pub RAWEV:  RawEv,
-    pub ATTESTATION_SESSION: Attestation_Session
+    pub TYPE: String,
+    pub ACTION: String,
+    pub REQ_PLC: Plc,
+    pub TERM: Term,
+    pub RAWEV: RawEv,
+    pub ATTESTATION_SESSION: Attestation_Session,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolRunResponse {
-    pub TYPE:  String,
-    pub ACTION:  String,
-    pub SUCCESS:  bool,
-    pub PAYLOAD:  RawEv
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolAppraiseRequest {
-    pub TYPE:  String,
-    pub ACTION:  String,
+    pub TYPE: String,
+    pub ACTION: String,
     pub ATTESTATION_SESSION: Attestation_Session,
-    pub TERM:  Term,
-    pub REQ_PLC:  Plc,
-    pub EVIDENCE:  Evidence,
-    pub RAWEV:  RawEv
+    pub TERM: Term,
+    pub REQ_PLC: Plc,
+    pub EVIDENCE: Evidence,
+    pub RAWEV: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolAppraiseResponse {
-    pub TYPE:  String,
-    pub ACTION:  String,
-    pub SUCCESS:  bool,
-    pub PAYLOAD:  AppResultC
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: AppResultC,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ASPRunRequest {
-    pub TYPE:  String,
-    pub ACTION:  String,
+    pub TYPE: String,
+    pub ACTION: String,
     pub ASP_ID: String,
     pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC:  Plc,
+    pub ASP_PLC: Plc,
     pub ASP_TARG_ID: TARG_ID,
-    pub RAWEV:  RawEv
+    pub RAWEV: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ASPRunResponse {
-    pub TYPE:  String,
-    pub ACTION:  String,
-    pub SUCCESS:  bool,
-    pub PAYLOAD:  RawEv
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv,
 }
 
-
-pub fn successfulASPRunResponse (evidence : RawEv) -> ASPRunResponse {
-    ASPRunResponse { TYPE: "RESPONSE".to_string(),
-                     ACTION: "ASP_RUN".to_string(),
-                     SUCCESS: true,
-                     PAYLOAD:  evidence}
+pub fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
+    ASPRunResponse {
+        TYPE: "RESPONSE".to_string(),
+        ACTION: "ASP_RUN".to_string(),
+        SUCCESS: true,
+        PAYLOAD: evidence,
+    }
 }
 
 // Currently the reason string is ignored, but eventually
 // should be incorporated into the response.
-pub fn failureASPRunResponse (_reason :String) -> ASPRunResponse {
+pub fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
     eprintln!("Error: {_reason}");
 
-    ASPRunResponse { TYPE: "RESPONSE".to_string(),
-                     ACTION: "ASP_RUN".to_string(),
-                     SUCCESS: false,
-                     PAYLOAD:  RawEv::RawEv(Vec::new())}
+    ASPRunResponse {
+        TYPE: "RESPONSE".to_string(),
+        ACTION: "ASP_RUN".to_string(),
+        SUCCESS: false,
+        PAYLOAD: RawEv::RawEv(Vec::new()),
+    }
+}
+
+// NOTE: This function will exit the process with a status code of 1
+pub fn respond_with_failure(reason: String) -> ! {
+    let resp_json = serde_json::to_string(&failureASPRunResponse(reason)).unwrap_or_else(|error| {
+        panic!("Failed to json.encode failure response: {error:?}");
+    });
+    println!("{resp_json}");
+    std::process::exit(1);
+}
+
+pub fn handle_body(body: fn(RawEv, ASP_ARGS) -> Result<RawEv>) -> ! {
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() != 2 {
+        eprintln!("Usage: {} <ASPRunRequest JSON>", args[0]);
+        respond_with_failure("Invalid arguments to ASP".to_string());
+    }
+
+    let json_req = &args[1];
+    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+    match body(req.RAWEV, req.ASP_ARGS) {
+        Ok(ev) => {
+            let response = successfulASPRunResponse(ev);
+            let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
+                respond_with_failure(format!("Failed to json.encode response: {error:?}"));
+            });
+            println!("{resp_json}");
+            std::process::exit(0);
+        }
+        Err(reason) => {
+            respond_with_failure(reason.to_string());
+        }
+    }
 }
