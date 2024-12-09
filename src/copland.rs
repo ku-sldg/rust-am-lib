@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 
 use anyhow::Result;
+use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -91,6 +92,8 @@ pub enum Term {
 //type BS = bytestring::ByteString;
 
 type RawEvT = Vec<String>; //Vec<BS>;
+
+pub type EvidenceT = Vec<Vec<u8>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 //#[serde(untagged)]
@@ -204,7 +207,31 @@ pub fn respond_with_failure(reason: String) -> ! {
     std::process::exit(1);
 }
 
-pub fn handle_body(body: fn(RawEv, ASP_ARGS) -> Result<RawEv>) -> ! {
+// Convert base64 encoded string to vec u8
+fn base64_to_vec(base64: &str) -> Vec<u8> {
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(base64)
+        .unwrap_or_else(|error| {
+            respond_with_failure(format!("Failed to decode base64: {error:?}"));
+        });
+    bytes
+}
+
+fn vec_to_base64(vec: &[u8]) -> String {
+    base64::engine::general_purpose::STANDARD.encode(vec)
+}
+
+fn rawev_to_vec(rawev: RawEv) -> Vec<Vec<u8>> {
+    match rawev {
+        RawEv::RawEv(rawevt) => rawevt.iter().map(|base64| base64_to_vec(&base64)).collect(),
+    }
+}
+
+fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
+    RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
+}
+
+pub fn handle_body(body: fn(EvidenceT, ASP_ARGS) -> Result<EvidenceT>) -> ! {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
@@ -216,9 +243,9 @@ pub fn handle_body(body: fn(RawEv, ASP_ARGS) -> Result<RawEv>) -> ! {
     let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
-    match body(req.RAWEV, req.ASP_ARGS) {
+    match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
-            let response = successfulASPRunResponse(ev);
+            let response = successfulASPRunResponse(vec_to_rawev(ev));
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
             });
