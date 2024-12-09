@@ -7,23 +7,23 @@ use core::panic;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub type Plc = String;
+type Plc = String;
 type N_ID = String;
-pub type ASP_ID = String;
-pub type TARG_ID = String;
+type ASP_ID = String;
+type TARG_ID = String;
 pub type ASP_ARGS = HashMap<String, String>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ASP_PARAMS {
-    pub ASP_ID: ASP_ID,
-    pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID,
+struct ASP_PARAMS {
+    ASP_ID: ASP_ID,
+    ASP_ARGS: ASP_ARGS,
+    ASP_PLC: Plc,
+    ASP_TARG_ID: TARG_ID,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "FWD_CONSTRUCTOR", content = "FWD_BODY")]
-pub enum FWD {
+enum FWD {
     COMP,
     ENCR,
     EXTD(String),
@@ -33,7 +33,7 @@ pub enum FWD {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "EVIDENCE_CONSTRUCTOR", content = "EVIDENCE_BODY")]
-pub enum Evidence {
+enum Evidence {
     mt,
     nn(N_ID),
     uu(Plc, FWD, ASP_PARAMS, Box<Evidence>),
@@ -41,14 +41,14 @@ pub enum Evidence {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum SP {
+enum SP {
     ALL,
     NONE,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "ASP_CONSTRUCTOR", content = "ASP_BODY")]
-pub enum ASP {
+enum ASP {
     NULL,
     CPY,
     ASPC(SP, FWD, ASP_PARAMS),
@@ -81,7 +81,7 @@ type Split = (SP, SP);
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
-pub enum Term {
+enum Term {
     asp(ASP),
     att(Plc, Box<Term>),
     lseq(Box<Term>, Box<Term>),
@@ -98,13 +98,13 @@ pub type EvidenceT = Vec<Vec<u8>>;
 #[derive(Serialize, Deserialize, Debug)]
 //#[serde(untagged)]
 //#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
-pub enum RawEv {
+enum RawEv {
     RawEv(RawEvT),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "AppResultC_CONSTRUCTOR", content = "AppResultC_BODY")]
-pub enum AppResultC {
+enum AppResultC {
     mtc_app,
     nnc_app(N_ID, String),
     ggc_app(Plc, ASP_PARAMS, RawEv, Box<AppResultC>),
@@ -114,69 +114,69 @@ pub enum AppResultC {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Attestation_Session {
-    pub Session_Plc: Plc,
-    pub Plc_Mapping: HashMap<Plc, String>,
-    pub PubKey_Mapping: HashMap<Plc, String>,
+struct Attestation_Session {
+    Session_Plc: Plc,
+    Plc_Mapping: HashMap<Plc, String>,
+    PubKey_Mapping: HashMap<Plc, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProtocolRunRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub REQ_PLC: Plc,
-    pub TERM: Term,
-    pub RAWEV: RawEv,
-    pub ATTESTATION_SESSION: Attestation_Session,
+struct ProtocolRunRequest {
+    TYPE: String,
+    ACTION: String,
+    REQ_PLC: Plc,
+    TERM: Term,
+    RAWEV: RawEv,
+    ATTESTATION_SESSION: Attestation_Session,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProtocolRunResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: RawEv,
+struct ProtocolRunResponse {
+    TYPE: String,
+    ACTION: String,
+    SUCCESS: bool,
+    PAYLOAD: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProtocolAppraiseRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub ATTESTATION_SESSION: Attestation_Session,
-    pub TERM: Term,
-    pub REQ_PLC: Plc,
-    pub EVIDENCE: Evidence,
-    pub RAWEV: RawEv,
+struct ProtocolAppraiseRequest {
+    TYPE: String,
+    ACTION: String,
+    ATTESTATION_SESSION: Attestation_Session,
+    TERM: Term,
+    REQ_PLC: Plc,
+    EVIDENCE: Evidence,
+    RAWEV: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProtocolAppraiseResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: AppResultC,
+struct ProtocolAppraiseResponse {
+    TYPE: String,
+    ACTION: String,
+    SUCCESS: bool,
+    PAYLOAD: AppResultC,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ASPRunRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub ASP_ID: String,
-    pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID,
-    pub RAWEV: RawEv,
+struct ASPRunRequest {
+    TYPE: String,
+    ACTION: String,
+    ASP_ID: String,
+    ASP_ARGS: ASP_ARGS,
+    ASP_PLC: Plc,
+    ASP_TARG_ID: TARG_ID,
+    RAWEV: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ASPRunResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: RawEv,
+struct ASPRunResponse {
+    TYPE: String,
+    ACTION: String,
+    SUCCESS: bool,
+    PAYLOAD: RawEv,
 }
 
-pub fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
+fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
     ASPRunResponse {
         TYPE: "RESPONSE".to_string(),
         ACTION: "ASP_RUN".to_string(),
@@ -187,7 +187,7 @@ pub fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
 
 // Currently the reason string is ignored, but eventually
 // should be incorporated into the response.
-pub fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
+fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
     eprintln!("Error: {_reason}");
 
     ASPRunResponse {
@@ -199,7 +199,7 @@ pub fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
 }
 
 // NOTE: This function will exit the process with a status code of 1
-pub fn respond_with_failure(reason: String) -> ! {
+fn respond_with_failure(reason: String) -> ! {
     let resp_json = serde_json::to_string(&failureASPRunResponse(reason)).unwrap_or_else(|error| {
         panic!("Failed to json.encode failure response: {error:?}");
     });
