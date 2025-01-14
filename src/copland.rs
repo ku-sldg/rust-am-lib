@@ -232,7 +232,7 @@ fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
     RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
 }
 
-pub fn handle_body(body: fn(EvidenceT, Value/* ASP_ARGS */) -> Result<EvidenceT>) -> ! {
+pub fn handle_body(body: fn(EvidenceT, ASP_ARGS) -> Result<EvidenceT>) -> ! {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
