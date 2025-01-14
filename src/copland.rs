@@ -5,6 +5,7 @@ use anyhow::Result;
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
+use serde_json::{Value};
 use std::collections::HashMap;
 
 type Plc = String;
@@ -162,7 +163,7 @@ struct ASPRunRequest {
     TYPE: String,
     ACTION: String,
     ASP_ID: String,
-    ASP_ARGS: ASP_ARGS,
+    ASP_ARGS: Value,/* ASP_ARGS, */
     ASP_PLC: Plc,
     ASP_TARG_ID: TARG_ID,
     RAWEV: RawEv,
@@ -231,7 +232,7 @@ fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
     RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
 }
 
-pub fn handle_body(body: fn(EvidenceT, ASP_ARGS) -> Result<EvidenceT>) -> ! {
+pub fn handle_body(body: fn(EvidenceT, Value/* ASP_ARGS */) -> Result<EvidenceT>) -> ! {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
