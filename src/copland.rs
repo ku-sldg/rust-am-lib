@@ -12,7 +12,7 @@ type Plc = String;
 type N_ID = String;
 type ASP_ID = String;
 type TARG_ID = String;
-pub type ASP_ARGS = HashMap<String, String>;
+pub type ASP_ARGS = serde_json::Value; /* HashMap<String, String>; */
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ASP_PARAMS {
@@ -163,7 +163,7 @@ struct ASPRunRequest {
     TYPE: String,
     ACTION: String,
     ASP_ID: String,
-    ASP_ARGS: Value,/* ASP_ARGS, */
+    ASP_ARGS: ASP_ARGS,
     ASP_PLC: Plc,
     ASP_TARG_ID: TARG_ID,
     RAWEV: RawEv,
