@@ -5,13 +5,14 @@ use anyhow::Result;
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
+use serde_json::{Value};
 use std::collections::HashMap;
 
 type Plc = String;
 type N_ID = String;
 type ASP_ID = String;
 type TARG_ID = String;
-pub type ASP_ARGS = HashMap<String, String>;
+pub type ASP_ARGS = serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ASP_PARAMS {
@@ -56,26 +57,6 @@ enum ASP {
     HSH,
     ENC(Plc),
 }
-
-/*
-impl Serialize for ASP {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-            match *self {
-                ASP::NULL => serializer.serialize_unit_variant("ASP", 0, "NULL"),
-                ASP::CPY =>  serializer.serialize_unit_variant("ASP", 1, "CPY"),
-                _ => serializer.serialize_unit_variant("ASP", 0, "NULL")
-            }
-     }
-    }
-
-
-impl Deserialize for ASP {
-
-}
-*/
 
 type Split = (SP, SP);
 
