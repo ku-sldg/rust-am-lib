@@ -14,6 +14,8 @@ type ASP_ID = String;
 type TARG_ID = String;
 pub type ASP_ARGS = serde_json::Value;
 
+static APPRAISAL_SUCCESS_RESPONSE: &str = "";
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ASP_PARAMS {
     ASP_ID: ASP_ID,
@@ -210,6 +212,51 @@ fn rawev_to_vec(rawev: RawEv) -> Vec<Vec<u8>> {
 
 fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
     RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
+}
+
+fn gather_args_and_req() -> (EvidenceT, ASP_ARGS) {
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() != 2 {
+        eprintln!("Usage: {} <ASPRunRequest JSON>", args[0]);
+        respond_with_failure("Invalid arguments to ASP".to_string());
+    }
+
+    let json_req = &args[1];
+    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+
+    (rawev_to_vec(req.RAWEV), req.ASP_ARGS)
+}
+
+pub fn handle_appraisal_body(body: fn(EvidenceT, ASP_ARGS) -> Result<Result<()>>) -> ! {
+    let (ev, args) = gather_args_and_req();
+    match body(ev, args) {
+        Ok(appr_res) => match appr_res {
+            Ok(_) => {
+                let response =
+                    successfulASPRunResponse(RawEv::RawEv(vec![APPRAISAL_SUCCESS_RESPONSE.into()]));
+                let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
+                    respond_with_failure(format!("Failed to json.encode response: {error:?}"));
+                });
+                println!("{resp_json}");
+                std::process::exit(0);
+            }
+            Err(reason) => {
+                // This is not a FAILURE, but rather an APPRAISAL that ended in a negative result.
+                let response = successfulASPRunResponse(RawEv::RawEv(vec![reason.to_string()]));
+                let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
+                    respond_with_failure(format!("Failed to json.encode response: {error:?}"));
+                });
+                println!("{resp_json}");
+                std::process::exit(0);
+            }
+        },
+        Err(reason) => {
+            respond_with_failure(reason.to_string());
+        }
+    }
 }
 
 pub fn handle_body(body: fn(EvidenceT, ASP_ARGS) -> Result<EvidenceT>) -> ! {
