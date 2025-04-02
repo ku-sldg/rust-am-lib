@@ -34,13 +34,45 @@ enum FWD {
     KEEP,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "EvInSig_CONSTRUCTOR", content = "EvInSig_BODY")]
+enum EvInSig {
+    InAll,
+    InNone
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "EvOutSig_CONSTRUCTOR", content = "EvOutSig_BODY")]
+enum EvOutSig {
+    OutN(String),
+    OutUnwrap
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "EVIDENCE_CONSTRUCTOR", content = "EVIDENCE_BODY")]
-enum Evidence {
-    mt,
-    nn(N_ID),
-    uu(Plc, FWD, ASP_PARAMS, Box<Evidence>),
-    ss(Box<Evidence>, Box<Evidence>),
+struct EvSig {
+    FWD: FWD,
+    EvInSig: EvInSig,
+    EvOutSig: EvOutSig
+}
+
+type ASP_Type_Env = HashMap<ASP_ID, EvSig>;
+type ASP_Compat_MapT = HashMap<ASP_ID, ASP_ID>;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct GlobalContext {
+    asp_types: ASP_Type_Env,
+    asp_comps: ASP_Compat_MapT
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "EVIDENCET_CONSTRUCTOR", content = "EVIDENCET_BODY")]
+enum EvidenceT {
+    mt_evt,
+    nonce_evt(N_ID),
+    asp_evt(Plc, ASP_PARAMS, Box<EvidenceT>),
+    left_evt(Box<EvidenceT>),
+    right_evt(Box<EvidenceT>),
+    split_evt(Box<EvidenceT>, Box<EvidenceT>)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -76,13 +108,19 @@ enum Term {
 
 type RawEvT = Vec<String>; //Vec<BS>;
 
-pub type EvidenceT = Vec<Vec<u8>>;
+pub type ASP_RawEv = Vec<Vec<u8>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 //#[serde(untagged)]
 //#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
 enum RawEv {
     RawEv(RawEvT),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Evidence {
+    RawEv: RawEv,
+    EvidenceT: EvidenceT
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -96,11 +134,12 @@ enum AppResultC {
     ssc_app(Box<AppResultC>, Box<AppResultC>),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Attestation_Session {
     Session_Plc: Plc,
     Plc_Mapping: HashMap<Plc, String>,
     PubKey_Mapping: HashMap<Plc, String>,
+    ats_context: GlobalContext
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -109,7 +148,7 @@ struct ProtocolRunRequest {
     ACTION: String,
     REQ_PLC: Plc,
     TERM: Term,
-    RAWEV: RawEv,
+    EVIDENCE: Evidence,
     ATTESTATION_SESSION: Attestation_Session,
 }
 
@@ -118,7 +157,7 @@ struct ProtocolRunResponse {
     TYPE: String,
     ACTION: String,
     SUCCESS: bool,
-    PAYLOAD: RawEv,
+    PAYLOAD: Evidence,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -214,7 +253,7 @@ fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
     RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
 }
 
-fn gather_args_and_req() -> (EvidenceT, ASP_ARGS) {
+fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
@@ -230,7 +269,7 @@ fn gather_args_and_req() -> (EvidenceT, ASP_ARGS) {
     (rawev_to_vec(req.RAWEV), req.ASP_ARGS)
 }
 
-pub fn handle_appraisal_body(body: fn(EvidenceT, ASP_ARGS) -> Result<Result<()>>) -> ! {
+pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>) -> ! {
     let (ev, args) = gather_args_and_req();
     match body(ev, args) {
         Ok(appr_res) => match appr_res {
@@ -259,7 +298,7 @@ pub fn handle_appraisal_body(body: fn(EvidenceT, ASP_ARGS) -> Result<Result<()>>
     }
 }
 
-pub fn handle_body(body: fn(EvidenceT, ASP_ARGS) -> Result<EvidenceT>) -> ! {
+pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
