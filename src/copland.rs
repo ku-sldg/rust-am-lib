@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value};
 use std::collections::HashMap;
 
-type Plc = String;
+pub type Plc = String;
 type N_ID = String;
 type ASP_ID = String;
 type TARG_ID = String;
