@@ -9,9 +9,9 @@ use serde_json::{Value};
 use std::collections::HashMap;
 
 pub type Plc = String;
-type N_ID = String;
-type ASP_ID = String;
-type TARG_ID = String;
+pub type N_ID = String;
+pub type ASP_ID = String;
+pub type TARG_ID = String;
 pub type ASP_ARGS = serde_json::Value;
 
 static APPRAISAL_SUCCESS_RESPONSE: &str = "";
