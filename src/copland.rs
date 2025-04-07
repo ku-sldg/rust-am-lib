@@ -72,7 +72,7 @@ pub struct GlobalContext {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "EVIDENCET_CONSTRUCTOR", content = "EVIDENCET_BODY")]
+#[serde(tag = "EvidenceT_CONSTRUCTOR", content = "EVIDENCET_BODY")]
 pub enum EvidenceT {
     mt_evt,
     nonce_evt(N_ID),
