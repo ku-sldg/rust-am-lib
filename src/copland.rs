@@ -86,7 +86,7 @@ pub enum SP {
 pub enum ASP {
     NULL,
     CPY,
-    ASPC(SP, FWD, ASP_PARAMS),
+    ASPC(ASP_PARAMS),    //ASPC(SP, FWD, ASP_PARAMS),
     SIG,
     HSH,
     ENC(Plc),
