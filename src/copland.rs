@@ -113,7 +113,7 @@ pub type ASP_RawEv = Vec<Vec<u8>>;
 #[derive(Serialize, Deserialize, Debug)]
 //#[serde(untagged)]
 //#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
-enum RawEv {
+pub enum RawEv {
     RawEv(RawEvT),
 }
 
@@ -135,7 +135,7 @@ enum AppResultC {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Attestation_Session {
+pub struct Attestation_Session {
     Session_Plc: Plc,
     Plc_Mapping: HashMap<Plc, String>,
     PubKey_Mapping: HashMap<Plc, String>,
@@ -143,7 +143,7 @@ struct Attestation_Session {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ProtocolRunRequest {
+pub struct ProtocolRunRequest {
     TYPE: String,
     ACTION: String,
     REQ_PLC: Plc,
@@ -153,7 +153,7 @@ struct ProtocolRunRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ProtocolRunResponse {
+pub struct ProtocolRunResponse {
     TYPE: String,
     ACTION: String,
     SUCCESS: bool,
