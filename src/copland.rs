@@ -17,16 +17,16 @@ pub type ASP_ARGS = serde_json::Value;
 static APPRAISAL_SUCCESS_RESPONSE: &str = "";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct ASP_PARAMS {
-    ASP_ID: ASP_ID,
-    ASP_ARGS: ASP_ARGS,
-    ASP_PLC: Plc,
-    ASP_TARG_ID: TARG_ID,
+pub struct ASP_PARAMS {
+    pub ASP_ID: ASP_ID,
+    pub ASP_ARGS: ASP_ARGS,
+    pub ASP_PLC: Plc,
+    pub ASP_TARG_ID: TARG_ID,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "FWD_CONSTRUCTOR", content = "FWD_BODY")]
-enum FWD {
+pub enum FWD {
     COMP,
     ENCR,
     EXTD(String),
@@ -36,37 +36,37 @@ enum FWD {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "EvInSig_CONSTRUCTOR", content = "EvInSig_BODY")]
-enum EvInSig {
+pub enum EvInSig {
     InAll,
     InNone
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "EvOutSig_CONSTRUCTOR", content = "EvOutSig_BODY")]
-enum EvOutSig {
+pub enum EvOutSig {
     OutN(String),
     OutUnwrap
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct EvSig {
+pub struct EvSig {
     FWD: FWD,
     EvInSig: EvInSig,
     EvOutSig: EvOutSig
 }
 
-type ASP_Type_Env = HashMap<ASP_ID, EvSig>;
-type ASP_Compat_MapT = HashMap<ASP_ID, ASP_ID>;
+pub type ASP_Type_Env = HashMap<ASP_ID, EvSig>;
+pub type ASP_Compat_MapT = HashMap<ASP_ID, ASP_ID>;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct GlobalContext {
-    asp_types: ASP_Type_Env,
-    asp_comps: ASP_Compat_MapT
+pub struct GlobalContext {
+    pub asp_types: ASP_Type_Env,
+    pub asp_comps: ASP_Compat_MapT
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "EVIDENCET_CONSTRUCTOR", content = "EVIDENCET_BODY")]
-enum EvidenceT {
+pub enum EvidenceT {
     mt_evt,
     nonce_evt(N_ID),
     asp_evt(Plc, ASP_PARAMS, Box<EvidenceT>),
@@ -76,14 +76,14 @@ enum EvidenceT {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-enum SP {
+pub enum SP {
     ALL,
     NONE,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "ASP_CONSTRUCTOR", content = "ASP_BODY")]
-enum ASP {
+pub enum ASP {
     NULL,
     CPY,
     ASPC(SP, FWD, ASP_PARAMS),
@@ -92,11 +92,11 @@ enum ASP {
     ENC(Plc),
 }
 
-type Split = (SP, SP);
+pub type Split = (SP, SP);
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
-enum Term {
+pub enum Term {
     asp(ASP),
     att(Plc, Box<Term>),
     lseq(Box<Term>, Box<Term>),
@@ -118,9 +118,9 @@ pub enum RawEv {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Evidence {
-    RawEv: RawEv,
-    EvidenceT: EvidenceT
+pub struct Evidence {
+    pub RawEv: RawEv,
+    pub EvidenceT: EvidenceT
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -136,28 +136,28 @@ enum AppResultC {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Attestation_Session {
-    Session_Plc: Plc,
-    Plc_Mapping: HashMap<Plc, String>,
-    PubKey_Mapping: HashMap<Plc, String>,
-    ats_context: GlobalContext
+    pub Session_Plc: Plc,
+    pub Plc_Mapping: HashMap<Plc, String>,
+    pub PubKey_Mapping: HashMap<Plc, String>,
+    pub ats_context: GlobalContext
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolRunRequest {
-    TYPE: String,
-    ACTION: String,
-    REQ_PLC: Plc,
-    TERM: Term,
-    EVIDENCE: Evidence,
-    ATTESTATION_SESSION: Attestation_Session,
+    pub TYPE: String,
+    pub ACTION: String,
+    pub REQ_PLC: Plc,
+    pub TERM: Term,
+    pub EVIDENCE: Evidence,
+    pub ATTESTATION_SESSION: Attestation_Session,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProtocolRunResponse {
-    TYPE: String,
-    ACTION: String,
-    SUCCESS: bool,
-    PAYLOAD: Evidence,
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: Evidence,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
