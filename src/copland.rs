@@ -60,8 +60,8 @@ pub type ASP_Compat_MapT = HashMap<ASP_ID, ASP_ID>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GlobalContext {
-    pub asp_types: ASP_Type_Env,
-    pub asp_comps: ASP_Compat_MapT
+    pub ASP_Types: ASP_Type_Env,
+    pub ASP_Comps: ASP_Compat_MapT
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -119,8 +119,8 @@ pub enum RawEv {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Evidence {
-    pub RawEv: RawEv,
-    pub EvidenceT: EvidenceT
+    pub RAWEV: RawEv,
+    pub EVIDENCET: EvidenceT
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -139,7 +139,7 @@ pub struct Attestation_Session {
     pub Session_Plc: Plc,
     pub Plc_Mapping: HashMap<Plc, String>,
     pub PubKey_Mapping: HashMap<Plc, String>,
-    pub ats_context: GlobalContext
+    pub Session_Context: GlobalContext
 }
 
 #[derive(Serialize, Deserialize, Debug)]
