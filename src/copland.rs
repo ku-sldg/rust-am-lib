@@ -50,9 +50,9 @@ pub enum EvOutSig {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EvSig {
-    FWD: FWD,
-    EvInSig: EvInSig,
-    EvOutSig: EvOutSig
+    pub FWD: FWD,
+    pub EvInSig: EvInSig,
+    pub EvOutSig: EvOutSig
 }
 
 pub type ASP_Type_Env = HashMap<ASP_ID, EvSig>;
