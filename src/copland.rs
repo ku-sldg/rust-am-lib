@@ -25,20 +25,27 @@ pub struct ASP_PARAMS {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "FWD_CONSTRUCTOR", content = "FWD_BODY")]
+//#[serde(tag = "FWD_CONSTRUCTOR", content = "FWD_BODY")]
 pub enum FWD {
+    REPLACE,
+    WRAP,
+    UNWRAP,
+    EXTEND
+}
+
+    /*
     COMP,
     ENCR,
     EXTD(String),
     KILL,
     KEEP,
-}
+    */
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "EvInSig_CONSTRUCTOR", content = "EvInSig_BODY")]
+//#[serde(tag = "EvInSig_CONSTRUCTOR", content = "EvInSig_BODY")]
 pub enum EvInSig {
-    InAll,
-    InNone
+    ALL,
+    NONE
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
