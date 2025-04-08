@@ -97,6 +97,7 @@ pub enum ASP {
     SIG,
     HSH,
     ENC(Plc),
+    APPR
 }
 
 pub type Split = (SP, SP);
