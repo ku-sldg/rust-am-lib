@@ -55,7 +55,7 @@ pub enum EvOutSig {
     OutUnwrap
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EvSig {
     pub FWD: FWD,
     pub EvInSig: EvInSig,
@@ -65,7 +65,7 @@ pub struct EvSig {
 pub type ASP_Type_Env = HashMap<ASP_ID, EvSig>;
 pub type ASP_Compat_MapT = HashMap<ASP_ID, ASP_ID>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GlobalContext {
     pub ASP_Types: ASP_Type_Env,
     pub ASP_Comps: ASP_Compat_MapT
@@ -142,7 +142,7 @@ enum AppResultC {
     ssc_app(Box<AppResultC>, Box<AppResultC>),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
     pub Session_Plc: Plc,
     pub Plc_Mapping: HashMap<Plc, String>,
