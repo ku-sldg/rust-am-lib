@@ -277,6 +277,10 @@ fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     (rawev_to_vec(req.RAWEV), req.ASP_ARGS)
 }
 
+pub fn term_add_args(t:Term, args:Value) -> Term {
+    t
+}
+
 pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>) -> ! {
     let (ev, args) = gather_args_and_req();
     match body(ev, args) {
