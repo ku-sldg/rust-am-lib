@@ -71,7 +71,7 @@ pub struct GlobalContext {
     pub ASP_Comps: ASP_Compat_MapT
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "EvidenceT_CONSTRUCTOR", content = "EvidenceT_BODY")]
 pub enum EvidenceT {
     mt_evt,
@@ -118,14 +118,14 @@ type RawEvT = Vec<String>; //Vec<BS>;
 
 pub type ASP_RawEv = Vec<Vec<u8>>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 //#[serde(untagged)]
 //#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
 pub enum RawEv {
     RawEv(RawEvT),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Evidence {
     pub RAWEV: RawEv,
     pub EVIDENCET: EvidenceT
