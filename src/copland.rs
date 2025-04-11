@@ -150,7 +150,7 @@ pub struct Attestation_Session {
     pub Session_Context: GlobalContext
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProtocolRunRequest {
     pub TYPE: String,
     pub ACTION: String,
@@ -160,7 +160,7 @@ pub struct ProtocolRunRequest {
     pub ATTESTATION_SESSION: Attestation_Session,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProtocolRunResponse {
     pub TYPE: String,
     pub ACTION: String,
