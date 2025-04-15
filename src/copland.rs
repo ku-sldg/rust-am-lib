@@ -281,37 +281,6 @@ fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     (rawev_to_vec(req.RAWEV), req.ASP_ARGS)
 }
 
-/*
-pub enum ASP {
-    NULL,
-    CPY,
-    ASPC(ASP_PARAMS),    //ASPC(SP, FWD, ASP_PARAMS),
-    SIG,
-    HSH,
-    ENC(Plc),
-    APPR
-}
-
-pub struct ASP_PARAMS {
-    pub ASP_ID: ASP_ID,
-    pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID,
-}
-
-pub type Split = (SP, SP);
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
-pub enum Term {
-    asp(ASP),
-    att(Plc, Box<Term>),
-    lseq(Box<Term>, Box<Term>),
-    bseq(Split, Box<Term>, Box<Term>),
-    bpar(Split, Box<Term>, Box<Term>),
-}
-    */
-
 fn aspc_args_swap(params:ASP_PARAMS, args:Value) -> ASP_PARAMS {
     ASP_PARAMS { ASP_ARGS: args,
                  ASP_ID: params.ASP_ID,
@@ -330,8 +299,30 @@ pub fn term_add_args(t:Term, args:Value) -> Term {
             }
         }
 
-        _ => {
-            t
+        Term::att(_,t1) => { term_add_args(*t1, args) }
+
+        Term::lseq(t1,t2) => 
+            { 
+                let t1: Term = term_add_args(*t1, args.clone());
+                let t2: Term = term_add_args(*t2, args.clone());
+
+                Term::lseq(Box::new(t1), Box::new(t2))
+            }
+
+        Term::bseq(sp, t1,t2) => 
+        { 
+            let t1: Term = term_add_args(*t1, args.clone());
+            let t2: Term = term_add_args(*t2, args.clone());
+
+            Term::bseq(sp, Box::new(t1), Box::new(t2))
+        }
+
+        Term::bpar(sp, t1,t2) => 
+        { 
+            let t1: Term = term_add_args(*t1, args.clone());
+            let t2: Term = term_add_args(*t2, args.clone());
+
+            Term::bpar(sp, Box::new(t1), Box::new(t2))
         }
     }
 }
