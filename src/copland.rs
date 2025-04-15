@@ -299,7 +299,10 @@ pub fn term_add_args(t:Term, args:Value) -> Term {
             }
         }
 
-        Term::att(_,t1) => { term_add_args(*t1, args) }
+        Term::att(q,t1) => {
+            let t1: Term = term_add_args(*t1, args);
+            Term::att(q, Box::new(t1)) 
+        }
 
         Term::lseq(t1,t2) => 
             { 
