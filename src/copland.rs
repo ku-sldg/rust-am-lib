@@ -131,6 +131,10 @@ pub struct Evidence {
     pub EVIDENCET: EvidenceT
 }
 
+pub static EMPTY_EVIDENCE: Evidence = 
+    Evidence { RAWEV: RawEv::RawEv (vec![]),
+        EVIDENCET: EvidenceT::mt_evt };
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "AppResultC_CONSTRUCTOR", content = "AppResultC_BODY")]
 enum AppResultC {
