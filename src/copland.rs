@@ -281,6 +281,21 @@ fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     (rawev_to_vec(req.RAWEV), req.ASP_ARGS)
 }
 
+pub fn get_env_var_val (key:String) -> Result<String> {
+
+    if key == "" {
+        Ok("".to_string()) 
+    }
+    else { 
+    let env_var_string = match std::env::var(&key) {
+        Ok(val) => val,
+        Err(_e) => {
+            panic!("Did not set environment variable {}\n", key)
+        }
+    };
+    Ok (env_var_string) }
+}
+
 fn aspc_args_swap(params:ASP_PARAMS, args:Value) -> ASP_PARAMS {
     ASP_PARAMS { ASP_ARGS: args,
                  ASP_ID: params.ASP_ID,
