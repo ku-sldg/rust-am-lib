@@ -8,7 +8,6 @@ use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value};
 use std::collections::HashMap;
-use tokio::runtime::Runtime;
 
 pub type Plc = String;
 pub type N_ID = String;
@@ -17,10 +16,11 @@ pub type TARG_ID = String;
 pub type ASP_ARGS = serde_json::Value;
 
 // tcp.rs (tcp utilities)
-use tokio::net::TcpSocket;
-use tokio::net::TcpStream;
-use std::net::SocketAddr;
-use tokio::io::{AsyncWriteExt, AsyncReadExt};
+//use tokio::net::TcpSocket;
+//use tokio::net::TcpStream;
+//use std::net::SocketAddr;
+//use tokio::io::{AsyncWriteExt, AsyncReadExt};
+//use tokio::runtime::Runtime;
 
 static APPRAISAL_SUCCESS_RESPONSE: &str = "";
 
@@ -242,7 +242,7 @@ fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
 }
 
 // NOTE: This function will exit the process with a status code of 1
-fn respond_with_failure(reason: String) -> ! {
+pub fn respond_with_failure(reason: String) -> ! {
     let resp_json = serde_json::to_string(&failureASPRunResponse(reason)).unwrap_or_else(|error| {
         panic!("Failed to json.encode failure response: {error:?}");
     });
@@ -410,6 +410,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     }
 }
 
+/*
 async fn connect_tcp_stream (server_uuid_string:String, client_uuid_string:String) -> std::io::Result<tokio::net::TcpStream> {
 
     let socket: TcpSocket = TcpSocket::new_v4()?;
@@ -536,3 +537,4 @@ pub fn handle_am_req_resp_body() -> std::io::Result<()> {
     std::process::exit(0);
 
 }
+    */
