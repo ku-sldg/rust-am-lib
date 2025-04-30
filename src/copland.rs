@@ -154,6 +154,22 @@ enum AppResultC {
     ssc_app(Box<AppResultC>, Box<AppResultC>),
 }
 
+/*
+Definition AppraisalSummary := (Map ASP_ID (Map TARG_ID bool)).
+*/
+
+pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+
+pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
+
+    eprintln!("Appraisal Summary: {}\n\n", appsumm_bool);
+
+    eprintln!("{:?}", appsumm)
+
+
+    /*  eprintln!("{:?}", my_glob_type_env); */
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
     pub Session_Plc: Plc,
@@ -217,6 +233,22 @@ struct ASPRunResponse {
     ACTION: String,
     SUCCESS: bool,
     PAYLOAD: RawEv,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppraisalSummaryRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub ATTESTATION_SESSION: Attestation_Session,
+    pub EVIDENCE: Evidence
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppraisalSummaryResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: AppraisalSummary
 }
 
 fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
