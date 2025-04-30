@@ -162,12 +162,8 @@ pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
 
 pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
 
-    eprintln!("Appraisal Summary: {}\n\n", appsumm_bool);
-
+    eprintln!("Appraisal Summary: {}\n", appsumm_bool);
     eprintln!("{:?}", appsumm)
-
-
-    /*  eprintln!("{:?}", my_glob_type_env); */
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
