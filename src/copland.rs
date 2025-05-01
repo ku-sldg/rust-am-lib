@@ -154,16 +154,25 @@ enum AppResultC {
     ssc_app(Box<AppResultC>, Box<AppResultC>),
 }
 
-/*
-Definition AppraisalSummary := (Map ASP_ID (Map TARG_ID bool)).
-*/
-
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+
+
+fn bool_to_passed_string (b:bool) -> String {
+    if b {"PASSED".to_string()}
+    else {"FAILED".to_string()}
+}
 
 pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
 
-    eprintln!("Appraisal Summary: {}\n", appsumm_bool);
-    eprintln!("{:?}", appsumm)
+    eprintln!("Appraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
+    
+    for (key, value) in appsumm.into_iter() {
+        eprintln!("{}:\n", key);
+        for (inner_key, inner_val) in value.into_iter() {
+            eprintln!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+        }
+    }
+    //eprintln!("{:?}", appsumm)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
