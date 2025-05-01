@@ -164,6 +164,7 @@ fn bool_to_passed_string (b:bool) -> String {
 
 pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
 
+    println!("-----------------------------------------------------");
     println!("Appraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
     
     for (key, value) in appsumm.into_iter() {
@@ -172,7 +173,7 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
             println!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
         }
     }
-    println!()
+    println!("-----------------------------------------------------");
     //eprintln!("{:?}", appsumm)
 }
 
