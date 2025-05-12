@@ -336,7 +336,7 @@ fn vec_to_base64(vec: &[u8]) -> String {
     base64::engine::general_purpose::STANDARD.encode(vec)
 }
 
-fn rawev_to_vec(rawev: RawEv) -> Vec<Vec<u8>> {
+pub fn rawev_to_vec(rawev: RawEv) -> Vec<Vec<u8>> {
     match rawev {
         RawEv::RawEv(rawevt) => rawevt.iter().map(|base64| base64_to_vec(&base64)).collect(),
     }
