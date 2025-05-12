@@ -259,6 +259,38 @@ pub struct AppraisalSummaryResponse {
     pub PAYLOAD: AppraisalSummary
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EvidenceSliceRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub GLOBAL_CONTEXT: GlobalContext,
+    pub EVIDENCE: Evidence, 
+    pub ASP_PARAMS: ASP_PARAMS
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EvidenceSliceResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv
+}
+
+/*
+Record EvidenceSliceRequest := 
+  mkEvSliceReq {
+    evslicereq_evidence : Evidence;
+    evslicereq_ctxt : GlobalContext;
+    evslicereq_params : ASP_PARAMS;
+  }.
+
+Record EvidenceSliceResponse := 
+  mkEvSliceResp {
+    evsliceresp_success: bool;
+    evslicerespresp_rawev: RawEv;
+  }.
+*/
+
 fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
     ASPRunResponse {
         TYPE: "RESPONSE".to_string(),
