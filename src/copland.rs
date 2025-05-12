@@ -342,7 +342,7 @@ pub fn rawev_to_vec(rawev: RawEv) -> Vec<Vec<u8>> {
     }
 }
 
-fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
+pub fn vec_to_rawev(vec: Vec<Vec<u8>>) -> RawEv {
     RawEv::RawEv(vec.iter().map(|bytes| vec_to_base64(bytes)).collect())
 }
 
