@@ -3,6 +3,7 @@ use tokio::net::TcpSocket;
 use tokio::net::TcpStream;
 use std::net::SocketAddr;
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
+use tokio::runtime::Runtime;
 
 pub async fn connect_tcp_stream (server_uuid_string:String, client_uuid_string:String) -> std::io::Result<tokio::net::TcpStream> {
 
@@ -65,4 +66,27 @@ pub async fn am_sendRec_string (s:String, mut stream:TcpStream) -> std::io::Resu
     // Clone and return response string
     let str_out : String = str_in.clone();
     Ok (str_out)
+}
+
+#[allow(non_snake_case)]
+pub fn am_sendRec_string_all (server_uuid_string:String, client_uuid_string:String, s:String) -> std::io::Result<String> {
+
+    let val = async {
+
+        let stream = connect_tcp_stream(server_uuid_string, client_uuid_string).await?;
+
+        let res = am_sendRec_string(s, stream).await?;
+        Ok::<String, std::io::Error> (res)
+
+    }; // end val = async
+
+    let runtime: Runtime = tokio::runtime::Runtime::new().unwrap();
+
+    let res = 
+     match runtime.block_on(val) {
+        Ok(x) => x,
+        Err(_) => panic!("Runtime failure in am_sendRec_string_all tcp.rs")
+    };
+    Ok (res)
+
 }
