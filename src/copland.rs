@@ -226,21 +226,21 @@ struct ProtocolAppraiseResponse {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ASPRunRequest {
-    TYPE: String,
-    ACTION: String,
-    ASP_ID: String,
-    ASP_ARGS: ASP_ARGS,
-    ASP_PLC: Plc,
-    ASP_TARG_ID: TARG_ID,
-    RAWEV: RawEv,
+    pub TYPE: String,
+    pub ACTION: String,
+    pub ASP_ID: String,
+    pub ASP_ARGS: ASP_ARGS,
+    pub ASP_PLC: Plc,
+    pub ASP_TARG_ID: TARG_ID,
+    pub RAWEV: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ASPRunResponse {
-    TYPE: String,
-    ACTION: String,
-    SUCCESS: bool,
-    PAYLOAD: RawEv,
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
