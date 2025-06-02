@@ -225,7 +225,7 @@ struct ProtocolAppraiseResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ASPRunRequest {
+pub struct ASPRunRequest {
     TYPE: String,
     ACTION: String,
     ASP_ID: String,
@@ -236,7 +236,7 @@ struct ASPRunRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ASPRunResponse {
+pub struct ASPRunResponse {
     TYPE: String,
     ACTION: String,
     SUCCESS: bool,
