@@ -133,15 +133,22 @@ pub enum RawEv {
     RawEv(RawEvT),
 }
 
+type Evidence = (RawEv, EvidenceT);
+/*
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Evidence {
+    /*
     pub RAWEV: RawEv,
     pub EVIDENCET: EvidenceT
+    */
 }
+    */
 
-pub static EMPTY_EVIDENCE: Evidence = 
+pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
+/*
     Evidence { RAWEV: RawEv::RawEv (vec![]),
         EVIDENCET: EvidenceT::mt_evt };
+        */
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "AppResultC_CONSTRUCTOR", content = "AppResultC_BODY")]
