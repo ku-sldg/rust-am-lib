@@ -133,7 +133,7 @@ pub enum RawEv {
     RawEv(RawEvT),
 }
 
-type Evidence = (RawEv, EvidenceT);
+pub type Evidence = (RawEv, EvidenceT);
 /*
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Evidence {
