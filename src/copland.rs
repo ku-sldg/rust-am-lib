@@ -59,7 +59,7 @@ pub enum EvInSig {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "EvOutSig_CONSTRUCTOR", content = "EvOutSig_BODY")]
 pub enum EvOutSig {
-    OutN(String),
+    OutN(u32),
     OutUnwrap
 }
 
