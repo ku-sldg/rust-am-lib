@@ -108,7 +108,12 @@ pub enum ASP {
     APPR
 }
 
-pub type Split = (SP, SP);
+//pub type Split = (SP, SP);
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum Split {
+    split1(SP),
+    split2(SP)
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
