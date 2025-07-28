@@ -110,9 +110,9 @@ pub enum ASP {
 
 //pub type Split = (SP, SP);
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum Split {
-    split1(SP),
-    split2(SP)
+pub struct Split {
+    split1: SP,
+    split2: SP
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
