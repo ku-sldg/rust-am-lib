@@ -190,6 +190,22 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     //eprintln!("{:?}", appsumm)
 }
 
+pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
+
+    eprintln!("---------------------------------------------------------------");
+    eprintln!("Appraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
+    
+    for (key, value) in appsumm.into_iter() {
+        eprintln!("{}:", key);
+        for (inner_key, inner_val) in value.into_iter() {
+            eprintln!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+        }
+    }
+    eprintln!("---------------------------------------------------------------");
+    eprintln!();
+    //eprintln!("{:?}", appsumm)
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
     pub Session_Plc: Plc,
