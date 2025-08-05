@@ -246,7 +246,7 @@ fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
 fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
 
     print!("GOT TO add_asp_summary");
-    panic!("hi");
+    //panic!("hi");
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
     let maybe_inner_map = m.get(&i);
@@ -337,7 +337,7 @@ pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<Ap
     print!("EvidenceT: {:?}", et);
     print!("RawEvT: {:?}", r);
     print!("GlobalContext: {:?}\n\n\n", g);
-    panic!("hi");
+    //panic!("hi");
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
