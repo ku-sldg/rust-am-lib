@@ -138,7 +138,7 @@ fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
 
 fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
 
-    print!("\npeel_n_rawev, ls:: {:?}", ls);
+    //print!("\npeel_n_rawev, ls:: {:?}", ls);
 
     match n {
 
@@ -244,21 +244,22 @@ enum AppResultC {
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
 
 fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
-    print!("\n\n\n\n\nAppraised vec val: {:?}\n\n\n\n", ls);
-    let v = ls.first().expect("checking ls.first()");
-    println!("\n\nv: {v}\n\n");
+    //print!("\n\n\n\n\nAppraised vec val: {:?}\n\n\n\n", ls);
+    let v = ls.first().expect("checking ls.first() in check_simple_appraised_rawev");
+    //println!("\n\nv: {v}\n\n");
     if ls == vec![""] {true}
     else {false}
 }
 
 fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
 
+    /*
     print!("GOT TO add_asp_summary");
     print!("\ns: {:?}", s);
     print!("\nls: {:?}", ls);
     print!("\ni: {:?}", i);
     print!("\ntid: {:?}", tid);
-    //panic!("hi");
+    */
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
     let maybe_inner_map = m.get(&i);
@@ -284,8 +285,8 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
             let et2_size = et_size(g.clone(), *et2.clone())?;
 
             let (r1, rest) = peel_n_rawev(et1_size, r)?;
-            print!("\net1_size: {:?}", et1_size);
-            print!("\nr1: {:?}", r1);
+            //print!("\net1_size: {:?}", et1_size);
+            //print!("\nr1: {:?}", r1);
             let (r2, _) = peel_n_rawev(et2_size, rest)?;
 
             let s1 = do_AppraisalSummary_inner(*et1, r1.clone(), g.clone(), s)?;
@@ -307,9 +308,11 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::REPLACE => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
+                                    /*
                                     print!("\n\nin REPLACE arm\n\n");
                                     print!("\nn: {:?}", n);
                                     print!("\nr: {:?}", r);
+                                    */
                                     let (r1, _) = peel_n_rawev(n, r)?;
                                     add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)
                                 }
@@ -319,7 +322,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::EXTEND => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
-                                    print!("\n\nin EXTEND arm\n\n");
+                                    //print!("\n\nin EXTEND arm\n\n");
                                     let (r1, rest) = peel_n_rawev(n, r)?;
                                     let res = add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)?;
                                     do_AppraisalSummary_inner(*et2, rest, g, res)
@@ -331,30 +334,17 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                     }            
                 }
             }
-
-
-
-       // panic!("hi")
         }
-
-
-
-        //EvidenceT::asp_evt(, , )
-
-
-
     }
-
-
-    //panic!("hi")
 }
 
 pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<AppraisalSummary> {
+    /*
     print!("\n\n\nGOT TO do_AppraisalSummary\n\n\n");
     print!("EvidenceT: {:?}", et);
     print!("RawEvT: {:?}", r);
     print!("GlobalContext: {:?}\n\n\n", g);
-    //panic!("hi");
+    */
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
