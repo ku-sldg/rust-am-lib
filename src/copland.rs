@@ -90,6 +90,76 @@ pub enum EvidenceT {
     split_evt(Box<EvidenceT>, Box<EvidenceT>)
 }
 
+fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
+
+    match et {
+        EvidenceT::mt_evt => {Ok(0)}
+        EvidenceT::asp_evt(_,par, et2) => {
+            match g.ASP_Types.get(&par.ASP_ID) {
+                None => {Ok(0)}
+                Some(evsig) => {
+                    match evsig.FWD {
+                        FWD::REPLACE => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {Ok(n)}
+                                _ => {Ok(0)}
+                            }
+                        }
+                        FWD::EXTEND => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+
+                                    let n2 = et_size(g, *et2)?;
+                                    {Ok (n + n2)}
+                                    
+                                }
+                                _ => {Ok(0)}
+                            }
+                        }
+                        _ => {Ok(0)} /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
+                    }            
+                }
+            }
+        }
+        EvidenceT::left_evt(e2) => {
+            et_size(g, *e2)
+        }
+        EvidenceT::right_evt(e2) => {
+            et_size(g, *e2)
+        }
+        EvidenceT::split_evt(e1, e2) => {
+            let n1 = et_size(g.clone(), *e1)?;
+            let n2 = et_size(g, *e2)?;
+            Ok(n1 + n2)
+        }
+        EvidenceT::nonce_evt(_) => {Ok(0)}
+    }
+}
+
+fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
+
+    match n {
+
+        0 => {Ok((vec![], ls))}
+
+        n2 => {
+
+            if ls.is_empty() {Ok((vec![], vec![]))} // TODO: error
+            else {
+                //let x = ls.first().expect("hi");
+                let ls2 = &ls[1..].to_vec();
+
+                let (ls1, ls2) = peel_n_rawev(n2, ls2.clone())?;
+
+                let res = ls1.into_iter().chain(ls2.clone().into_iter()).collect();
+
+                Ok((res, ls2))
+            }
+        }
+    }
+}
+
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum SP {
     ALL,
@@ -168,6 +238,101 @@ enum AppResultC {
 
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
 
+fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
+    if ls == vec![""] {true}
+    else {false}
+}
+
+fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+
+    let b = check_simple_appraised_rawev(ls);
+    let mut m = s.clone();
+    let maybe_inner_map = m.get(&i);
+    let mut inner_map = 
+        match maybe_inner_map {
+            None => {HashMap::new()}
+            Some(mm) => mm.clone()
+        };
+    inner_map.insert(tid, b);
+    m.insert(i, inner_map);
+    
+    Ok(m.clone())
+}
+
+fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:AppraisalSummary) -> Result<AppraisalSummary> {
+
+    match et {
+        EvidenceT::mt_evt => {Ok(s)}
+        EvidenceT::nonce_evt(_) => {Ok(s)}
+        EvidenceT::split_evt(et1, et2) => {
+
+            let et1_size= et_size(g.clone(),*et1)?;
+            let et2_size = et_size(g.clone(), *et2.clone())?;
+
+            let (r1, rest) = peel_n_rawev(et1_size, r)?;
+            let (r2, _) = peel_n_rawev(et2_size, rest)?;
+
+            let s1 = do_AppraisalSummary_inner(*et2.clone(), r1.clone(), g.clone(), s)?;
+
+            do_AppraisalSummary_inner(*et2, r2, g, s1)
+        }
+        EvidenceT::left_evt(et2) => {
+            do_AppraisalSummary_inner(*et2, r, g, s)
+        }
+        EvidenceT::right_evt(et2) => {
+            do_AppraisalSummary_inner(*et2, r, g, s)
+        }
+        EvidenceT::asp_evt(_, par, et2 ) => {
+
+            match g.ASP_Types.get(&par.ASP_ID) {
+                None => {Ok(s)}
+                Some(evsig) => {
+                    match evsig.FWD {
+                        FWD::REPLACE => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    let (r1, _) = peel_n_rawev(n, r)?;
+
+                                    add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)
+                                }
+                                _ => {Ok(s)}
+                            }
+                        }
+                        FWD::EXTEND => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    let (r1, rest) = peel_n_rawev(n, r)?;
+                                    let res = add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)?;
+                                    do_AppraisalSummary_inner(*et2, rest, g, res)
+                                }
+                                _ => {Ok(s)}
+                            }
+                        }
+                        _ => {Ok(s)} /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
+                    }            
+                }
+            }
+
+
+
+       // panic!("hi")
+        }
+
+
+
+        //EvidenceT::asp_evt(, , )
+
+
+
+    }
+
+
+    //panic!("hi")
+}
+
+pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<AppraisalSummary> {
+    do_AppraisalSummary_inner(et, r, g, HashMap::new())
+}
 
 fn bool_to_passed_string (b:bool) -> String {
     if b {"PASSED".to_string()}
