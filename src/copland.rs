@@ -297,8 +297,8 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::REPLACE => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
+                                    print!("\n\nin REPLACE arm\n\n");
                                     let (r1, _) = peel_n_rawev(n, r)?;
-
                                     add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)
                                 }
                                 _ => {Ok(s)}
@@ -307,6 +307,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::EXTEND => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
+                                    print!("\n\nin EXTEND arm\n\n");
                                     let (r1, rest) = peel_n_rawev(n, r)?;
                                     let res = add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)?;
                                     do_AppraisalSummary_inner(*et2, rest, g, res)
