@@ -250,6 +250,9 @@ fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Resu
 
     print!("GOT TO add_asp_summary");
     print!("\ns: {:?}", s);
+    print!("\nls: {:?}", ls);
+    print!("\ni: {:?}", i);
+    print!("\ntid: {:?}", tid);
     //panic!("hi");
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
