@@ -249,6 +249,7 @@ fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
 fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
 
     print!("GOT TO add_asp_summary");
+    print!("\ns: {:?}", s);
     //panic!("hi");
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
