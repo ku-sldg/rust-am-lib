@@ -151,7 +151,7 @@ fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
                 //let x = ls.first().expect("hi");
                 let ls2 = &ls[1..].to_vec();
 
-                let (ls1, ls2) = peel_n_rawev(n2, ls2.clone())?;
+                let (ls1, ls2) = peel_n_rawev((n2 - 1), ls2.clone())?;
 
                 let res = ls1.into_iter().chain(ls2.clone().into_iter()).collect();
 
