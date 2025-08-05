@@ -334,7 +334,10 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
 
 pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<AppraisalSummary> {
     print!("GOT TO do_AppraisalSummary");
-    panic!("hi");
+    print!("EvidenceT: {:?}", et);
+    print!("RawEvT: {:?}", r);
+    print!("GlobalContext: {:?}", g);
+    //panic!("hi");
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
