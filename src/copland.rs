@@ -148,12 +148,15 @@ fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
 
             if ls.is_empty() {Ok((vec![], vec![]))} // TODO: error
             else {
-                //let x = ls.first().expect("hi");
-                let ls2 = &ls[1..].to_vec();
+                let x = ls.first().expect("hi").to_string();
+                let ls2 = ls[1..].to_vec();
+                let xvec = vec![x].to_vec();
 
-                let (ls1, ls2) = peel_n_rawev((n2 - 1), ls2.clone())?;
+                let (ls1, ls2) = peel_n_rawev(n2 - 1, ls2.clone())?;
 
-                let res = ls1.into_iter().chain(ls2.clone().into_iter()).collect();
+
+
+                let res = xvec.clone().into_iter().chain(ls1.clone().into_iter()).collect();
 
                 Ok((res, ls2))
             }
