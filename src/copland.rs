@@ -337,7 +337,7 @@ pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<Ap
     print!("EvidenceT: {:?}", et);
     print!("RawEvT: {:?}", r);
     print!("GlobalContext: {:?}", g);
-    //panic!("hi");
+    panic!("hi");
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
