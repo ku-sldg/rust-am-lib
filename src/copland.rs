@@ -333,6 +333,8 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
 }
 
 pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<AppraisalSummary> {
+    print!("GOT TO do_AppraisalSummary");
+    panic!("hi");
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
