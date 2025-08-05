@@ -279,6 +279,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
             let et2_size = et_size(g.clone(), *et2.clone())?;
 
             let (r1, rest) = peel_n_rawev(et1_size, r)?;
+            print!("\net1_size: {:?}", et1_size);
             print!("\nr1: {:?}", r1);
             let (r2, _) = peel_n_rawev(et2_size, rest)?;
 
