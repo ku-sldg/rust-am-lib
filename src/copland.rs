@@ -138,6 +138,8 @@ fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
 
 fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
 
+    print!("\npeel_n_rawev, ls:: {:?}", ls);
+
     match n {
 
         0 => {Ok((vec![], ls))}
