@@ -239,6 +239,7 @@ enum AppResultC {
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
 
 fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
+    print!("\n\n\n\n\nAppraised vec val: {:?}\n\n\n\n", ls);
     if ls == vec![""] {true}
     else {false}
 }
