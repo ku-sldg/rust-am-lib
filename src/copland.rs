@@ -2,7 +2,6 @@
 #![allow(non_snake_case)]
 
 use anyhow::Result;
-//use anyhow::anyhow;
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
@@ -14,13 +13,6 @@ pub type N_ID = String;
 pub type ASP_ID = String;
 pub type TARG_ID = String;
 pub type ASP_ARGS = serde_json::Value;
-
-// tcp.rs (tcp utilities)
-//use tokio::net::TcpSocket;
-//use tokio::net::TcpStream;
-//use std::net::SocketAddr;
-//use tokio::io::{AsyncWriteExt, AsyncReadExt};
-//use tokio::runtime::Runtime;
 
 static APPRAISAL_SUCCESS_RESPONSE: &str = "";
 
@@ -40,14 +32,6 @@ pub enum FWD {
     UNWRAP,
     EXTEND
 }
-
-    /*
-    COMP,
-    ENCR,
-    EXTD(String),
-    KILL,
-    KEEP,
-    */
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 //#[serde(tag = "EvInSig_CONSTRUCTOR", content = "EvInSig_BODY")]
@@ -90,6 +74,168 @@ pub enum EvidenceT {
     split_evt(Box<EvidenceT>, Box<EvidenceT>)
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum SP {
+    ALL,
+    NONE,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "ASP_CONSTRUCTOR", content = "ASP_BODY")]
+pub enum ASP {
+    NULL,
+    CPY,
+    ASPC(ASP_PARAMS),
+    SIG,
+    HSH,
+    ENC(Plc),
+    APPR
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Split {
+    split1: SP,
+    split2: SP
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
+pub enum Term {
+    asp(ASP),
+    att(Plc, Box<Term>),
+    lseq(Box<Term>, Box<Term>),
+    bseq(Split, Box<Term>, Box<Term>),
+    bpar(Split, Box<Term>, Box<Term>),
+}
+
+type RawEvT = Vec<String>;
+
+pub type ASP_RawEv = Vec<Vec<u8>>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+//#[serde(untagged)]
+//#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
+pub enum RawEv {
+    RawEv(RawEvT),
+}
+
+pub type Evidence = (RawEv, EvidenceT);
+
+pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
+
+pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Attestation_Session {
+    pub Session_Plc: Plc,
+    pub Plc_Mapping: HashMap<Plc, String>,
+    pub PubKey_Mapping: HashMap<Plc, String>,
+    pub Session_Context: GlobalContext
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ProtocolRunRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub REQ_PLC: Plc,
+    pub TO_PLC: Plc,
+    pub TERM: Term,
+    pub EVIDENCE: Evidence,
+    pub ATTESTATION_SESSION: Attestation_Session,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ProtocolRunResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: Evidence,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ASPRunRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub ASP_ID: String,
+    pub ASP_ARGS: ASP_ARGS,
+    pub ASP_PLC: Plc,
+    pub ASP_TARG_ID: TARG_ID,
+    pub RAWEV: RawEv,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ASPRunResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppraisalSummaryRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub ATTESTATION_SESSION: Attestation_Session,
+    pub EVIDENCE: Evidence
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppraisalSummaryResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: AppraisalSummary
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EvidenceSliceRequest {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub GLOBAL_CONTEXT: GlobalContext,
+    pub EVIDENCE: Evidence, 
+    pub ASP_PARAMS: ASP_PARAMS
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EvidenceSliceResponse {
+    pub TYPE: String,
+    pub ACTION: String,
+    pub SUCCESS: bool,
+    pub PAYLOAD: RawEv
+}
+
+fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
+    ASPRunResponse {
+        TYPE: "RESPONSE".to_string(),
+        ACTION: "ASP_RUN".to_string(),
+        SUCCESS: true,
+        PAYLOAD: evidence,
+    }
+}
+
+// Currently the reason string is ignored, but eventually
+// should be incorporated into the response.
+fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
+    eprintln!("Error: {_reason}");
+
+    ASPRunResponse {
+        TYPE: "RESPONSE".to_string(),
+        ACTION: "ASP_RUN".to_string(),
+        SUCCESS: false,
+        PAYLOAD: RawEv::RawEv(Vec::new()),
+    }
+}
+
+// NOTE: This function will exit the process with a status code of 1
+pub fn respond_with_failure(reason: String) -> ! {
+    let resp_json = serde_json::to_string(&failureASPRunResponse(reason)).unwrap_or_else(|error| {
+        panic!("Failed to json.encode failure response: {error:?}");
+    });
+    println!("{resp_json}");
+    std::process::exit(1);
+}
+
+
 fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
 
     match et {
@@ -110,7 +256,7 @@ fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
                                 EvOutSig::OutN(n) => {
 
                                     let n2 = et_size(g, *et2)?;
-                                    {Ok (n + n2)}
+                                        Ok (n + n2)
                                     
                                 }
                                 _ => {Ok(0)}
@@ -138,8 +284,6 @@ fn et_size(g:GlobalContext, et:EvidenceT) -> Result<u32> {
 
 fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
 
-    //print!("\npeel_n_rawev, ls:: {:?}", ls);
-
     match n {
 
         0 => {Ok((vec![], ls))}
@@ -164,102 +308,13 @@ fn peel_n_rawev (n:u32, ls:RawEvT) -> Result<(RawEvT, RawEvT)> {
     }
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum SP {
-    ALL,
-    NONE,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "ASP_CONSTRUCTOR", content = "ASP_BODY")]
-pub enum ASP {
-    NULL,
-    CPY,
-    ASPC(ASP_PARAMS),    //ASPC(SP, FWD, ASP_PARAMS),
-    SIG,
-    HSH,
-    ENC(Plc),
-    APPR
-}
-
-//pub type Split = (SP, SP);
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Split {
-    split1: SP,
-    split2: SP
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "TERM_CONSTRUCTOR", content = "TERM_BODY")]
-pub enum Term {
-    asp(ASP),
-    att(Plc, Box<Term>),
-    lseq(Box<Term>, Box<Term>),
-    bseq(Split, Box<Term>, Box<Term>),
-    bpar(Split, Box<Term>, Box<Term>),
-}
-
-//type BS = bytestring::ByteString;
-
-type RawEvT = Vec<String>; //Vec<BS>;
-
-pub type ASP_RawEv = Vec<Vec<u8>>;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-//#[serde(untagged)]
-//#[serde(tag = "RawEv_CONSTRUCTOR", content = "RawEv_BODY")]
-pub enum RawEv {
-    RawEv(RawEvT),
-}
-
-pub type Evidence = (RawEv, EvidenceT);
-/*
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Evidence {
-    /*
-    pub RAWEV: RawEv,
-    pub EVIDENCET: EvidenceT
-    */
-}
-    */
-
-pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
-/*
-    Evidence { RAWEV: RawEv::RawEv (vec![]),
-        EVIDENCET: EvidenceT::mt_evt };
-        */
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "AppResultC_CONSTRUCTOR", content = "AppResultC_BODY")]
-enum AppResultC {
-    mtc_app,
-    nnc_app(N_ID, String),
-    ggc_app(Plc, ASP_PARAMS, RawEv, Box<AppResultC>),
-    hhc_app(Plc, ASP_PARAMS, String, Box<AppResultC>),
-    eecc_app(Plc, ASP_PARAMS, String, Box<AppResultC>),
-    ssc_app(Box<AppResultC>, Box<AppResultC>),
-}
-
-pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
-
 fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
-    //print!("\n\n\n\n\nAppraised vec val: {:?}\n\n\n\n", ls);
-    let v = ls.first().expect("checking ls.first() in check_simple_appraised_rawev");
-    //println!("\n\nv: {v}\n\n");
     if ls == vec![""] {true}
     else {false}
 }
 
 fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
 
-    /*
-    print!("GOT TO add_asp_summary");
-    print!("\ns: {:?}", s);
-    print!("\nls: {:?}", ls);
-    print!("\ni: {:?}", i);
-    print!("\ntid: {:?}", tid);
-    */
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
     let maybe_inner_map = m.get(&i);
@@ -339,12 +394,6 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
 }
 
 pub fn do_AppraisalSummary(et:EvidenceT, r:RawEvT, g:GlobalContext) -> Result<AppraisalSummary> {
-    /*
-    print!("\n\n\nGOT TO do_AppraisalSummary\n\n\n");
-    print!("EvidenceT: {:?}", et);
-    print!("RawEvT: {:?}", r);
-    print!("GlobalContext: {:?}\n\n\n", g);
-    */
     do_AppraisalSummary_inner(et, r, g, HashMap::new())
 }
 
@@ -366,7 +415,6 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     }
     println!("---------------------------------------------------------------");
     println!();
-    //eprintln!("{:?}", appsumm)
 }
 
 pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
@@ -382,151 +430,6 @@ pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     }
     eprintln!("---------------------------------------------------------------");
     eprintln!();
-    //eprintln!("{:?}", appsumm)
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Attestation_Session {
-    pub Session_Plc: Plc,
-    pub Plc_Mapping: HashMap<Plc, String>,
-    pub PubKey_Mapping: HashMap<Plc, String>,
-    pub Session_Context: GlobalContext
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ProtocolRunRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub REQ_PLC: Plc,
-    pub TO_PLC: Plc,
-    pub TERM: Term,
-    pub EVIDENCE: Evidence,
-    pub ATTESTATION_SESSION: Attestation_Session,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ProtocolRunResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: Evidence,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ProtocolAppraiseRequest {
-    TYPE: String,
-    ACTION: String,
-    ATTESTATION_SESSION: Attestation_Session,
-    TERM: Term,
-    REQ_PLC: Plc,
-    EVIDENCE: Evidence,
-    RAWEV: RawEv,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ProtocolAppraiseResponse {
-    TYPE: String,
-    ACTION: String,
-    SUCCESS: bool,
-    PAYLOAD: AppResultC,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ASPRunRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub ASP_ID: String,
-    pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID,
-    pub RAWEV: RawEv,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ASPRunResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: RawEv,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AppraisalSummaryRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub ATTESTATION_SESSION: Attestation_Session,
-    pub EVIDENCE: Evidence
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AppraisalSummaryResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: AppraisalSummary
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct EvidenceSliceRequest {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub GLOBAL_CONTEXT: GlobalContext,
-    pub EVIDENCE: Evidence, 
-    pub ASP_PARAMS: ASP_PARAMS
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct EvidenceSliceResponse {
-    pub TYPE: String,
-    pub ACTION: String,
-    pub SUCCESS: bool,
-    pub PAYLOAD: RawEv
-}
-
-/*
-Record EvidenceSliceRequest := 
-  mkEvSliceReq {
-    evslicereq_evidence : Evidence;
-    evslicereq_ctxt : GlobalContext;
-    evslicereq_params : ASP_PARAMS;
-  }.
-
-Record EvidenceSliceResponse := 
-  mkEvSliceResp {
-    evsliceresp_success: bool;
-    evslicerespresp_rawev: RawEv;
-  }.
-*/
-
-fn successfulASPRunResponse(evidence: RawEv) -> ASPRunResponse {
-    ASPRunResponse {
-        TYPE: "RESPONSE".to_string(),
-        ACTION: "ASP_RUN".to_string(),
-        SUCCESS: true,
-        PAYLOAD: evidence,
-    }
-}
-
-// Currently the reason string is ignored, but eventually
-// should be incorporated into the response.
-fn failureASPRunResponse(_reason: String) -> ASPRunResponse {
-    eprintln!("Error: {_reason}");
-
-    ASPRunResponse {
-        TYPE: "RESPONSE".to_string(),
-        ACTION: "ASP_RUN".to_string(),
-        SUCCESS: false,
-        PAYLOAD: RawEv::RawEv(Vec::new()),
-    }
-}
-
-// NOTE: This function will exit the process with a status code of 1
-pub fn respond_with_failure(reason: String) -> ! {
-    let resp_json = serde_json::to_string(&failureASPRunResponse(reason)).unwrap_or_else(|error| {
-        panic!("Failed to json.encode failure response: {error:?}");
-    });
-    println!("{resp_json}");
-    std::process::exit(1);
 }
 
 // Convert base64 encoded string to vec u8
