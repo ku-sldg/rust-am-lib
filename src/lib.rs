@@ -1,5 +1,7 @@
 pub mod copland;
 
+pub mod tcp;
+
 /// Debug print function that only outputs to stderr in debug builds.
 /// In release builds, this function does nothing.
 ///
