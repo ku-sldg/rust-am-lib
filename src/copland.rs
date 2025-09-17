@@ -94,8 +94,8 @@ pub enum ASP {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Split {
-    split1: SP,
-    split2: SP
+    pub split1: SP,
+    pub split2: SP
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
