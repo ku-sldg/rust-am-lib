@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
@@ -327,6 +327,85 @@ fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Resu
     m.insert(i, inner_map);
     
     Ok(m.clone())
+}
+
+static EV_SLICE_ERROR_STR : &str = "Error in do_EvidenceSlice_inner() in copland.rs";
+
+fn do_EvidenceSlice_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, ps:ASP_PARAMS) -> Result<RawEvT> {
+
+    match et {
+        EvidenceT::mt_evt => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+        EvidenceT::nonce_evt(_) => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+        EvidenceT::split_evt(et1, et2) => {
+
+            let et1_size= et_size(g.clone(),*et1.clone())?;
+            let et2_size = et_size(g.clone(), *et2.clone())?;
+
+            let (r1, rest) = peel_n_rawev(et1_size, r)?;
+
+            let e1_res = do_EvidenceSlice_inner(*et1, r1, g.clone(), ps.clone());
+
+            match e1_res {
+                Ok(v) => {Ok(v)}
+
+                _ => {
+                    let (r2, _) = peel_n_rawev(et2_size, rest)?;
+                    do_EvidenceSlice_inner(*et2, r2, g, ps)
+                }
+            }
+        }
+        EvidenceT::left_evt(et2) => {
+            do_EvidenceSlice_inner(*et2, r, g, ps)
+        }
+        EvidenceT::right_evt(et2) => {
+            do_EvidenceSlice_inner(*et2, r, g, ps)
+        }
+        EvidenceT::asp_evt(_, par, et2 ) => {
+
+            let aid = par.ASP_ID.clone();
+            let tid = par.ASP_TARG_ID;
+
+            let n = 
+            match g.ASP_Types.get(&aid) {
+                None => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+                Some(evsig) => {
+                    match evsig.FWD {
+                        FWD::REPLACE => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    Ok(n)
+                                }
+                                _ => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+                            }
+                        }
+                        FWD::EXTEND => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    Ok(n)
+                                }
+                                _ => {Err(anyhow!(EV_SLICE_ERROR_STR))} /* TODO: add OutUnWrap cases once supported */
+                            }            
+                        }
+
+                        _ => {Err(anyhow!(EV_SLICE_ERROR_STR))} /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
+                    }
+                }
+            }?;
+
+            let (r1, rest) = peel_n_rawev(n, r)?;
+            
+            if (aid, tid) == (ps.ASP_ID.clone(), ps.ASP_TARG_ID.clone()) {
+                Ok(r1)
+            }
+            else {       
+                do_EvidenceSlice_inner(*et2, rest, g, ps)
+            }
+        }      
+    }
+}
+
+pub fn do_EvidenceSlice(et:EvidenceT, r:RawEvT, g:GlobalContext, ps:ASP_PARAMS) -> Result<RawEvT> {
+    do_EvidenceSlice_inner(et, r, g, ps)
 }
 
 fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:AppraisalSummary) -> Result<AppraisalSummary> {
