@@ -288,8 +288,13 @@ pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: 
 
     let prov_asp: Term = build_golden_evidence_provisioning_asp(fp);
     let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, t_golden, prov_asp);
+    let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
+    add_provisioning_args(new_term)
+    /*
     let prov_term_final: Term = add_provisioning_args(prov_term.clone());
-    Term::lseq(Box::new(t), Box::new(prov_term_final))
+    let old_term_final: Term = add_provisioning_args(t);
+    Term::lseq(Box::new(old_term_final), Box::new(prov_term_final))
+    */
 }
 
 
