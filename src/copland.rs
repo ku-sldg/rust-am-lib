@@ -287,7 +287,8 @@ pub fn build_golden_evidence_provisioning_asp (fp:&str) -> Term {
 pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: &Term, t:Term) -> Term {
 
     let prov_asp: Term = build_golden_evidence_provisioning_asp(fp);
-    let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, t_golden, prov_asp);
+    let new_t_golden: Term = add_provisioning_args(t_golden.clone());
+    let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, prov_asp);
     let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
     add_provisioning_args(new_term)
     /*
