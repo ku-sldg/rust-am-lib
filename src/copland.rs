@@ -121,6 +121,18 @@ pub enum RawEv {
 
 pub type Evidence = (RawEv, EvidenceT);
 
+pub fn get_rawev (e:Evidence) -> RawEvT {
+    match e {
+        (RawEv::RawEv(v), _) => {v}
+    }
+}
+
+pub fn get_et (e:Evidence) -> EvidenceT {
+    match e {
+        (_, et) => {et}
+    }
+}
+
 pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
 
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
