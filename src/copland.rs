@@ -246,17 +246,20 @@ pub fn add_provisioning_args (t:Term) -> Term {
 
 pub static PROVISION_ASP_ID: &str = "provision_goldenevidence"; //executables/provision_goldenevidence
 pub static ET_GOLDEN_STR: &str = "et_golden";
+pub static ET_CTXT_STR: &str = "et_context";
 pub static FILEPATH_GOLDEN_FIELD_STR: &str = "filepath_golden";
 pub static ENV_VAR_GOLDEN_FIELD_STR: &str = "env_var_golden";
 
-pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, old_args:Value) -> Result<Value> {
+pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, old_args:Value) -> Result<Value> {
     let golden_et = eval(p.clone(),et.clone(), t.clone())?;
     let golden_et_json = serde_json::to_value(&golden_et)?;
+    let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
     let new_args = add_key_to_json_args(ET_GOLDEN_STR.to_string(), golden_et_json, old_args);
-    return Ok(new_args);
+    let new_args_final = add_key_to_json_args(ET_CTXT_STR.to_string(), et_ctxt_json, new_args);
+    return Ok(new_args_final);
 }
 
-pub fn add_golden_evidence_provisioning_args_asp (p:&Plc, init_et:&EvidenceT, t:&Term, a:ASP) -> ASP {
+pub fn add_golden_evidence_provisioning_args_asp (p:&Plc, init_et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, a:ASP) -> ASP {
     match a {
         ASP::ASPC(ps) => {
 
@@ -264,7 +267,7 @@ pub fn add_golden_evidence_provisioning_args_asp (p:&Plc, init_et:&EvidenceT, t:
                 ASP_PARAMS { ASP_ID:aid, ASP_ARGS:args, ASP_PLC:pid, ASP_TARG_ID:tid } => 
                     {
                         if aid == PROVISION_ASP_ID.to_string() {
-                            let new_args = generate_golden_evidence_provisioning_args(&p, &init_et, &t, args).expect("hi");
+                            let new_args = generate_golden_evidence_provisioning_args(&p, &init_et, &t, et_ctxt, args).expect("hi");
                             let new_ps = ASP_PARAMS {ASP_ID: aid, ASP_ARGS: new_args, ASP_PLC:pid, ASP_TARG_ID:tid};
                             return ASP::ASPC(new_ps)
                         }
@@ -276,13 +279,13 @@ pub fn add_golden_evidence_provisioning_args_asp (p:&Plc, init_et:&EvidenceT, t:
     }
 }
 
-pub fn add_golden_evidence_provisioning_args (p:&Plc, init_et:&EvidenceT, t_golden:&Term, t:Term) -> Term {
+pub fn add_golden_evidence_provisioning_args (p:&Plc, init_et:&EvidenceT, t_golden:&Term, et_ctxt:&GlobalContext, t:Term) -> Term {
     match t {
-        Term::asp(a) => { Term::asp(add_golden_evidence_provisioning_args_asp(p, init_et, t_golden, a)) }
-        Term::att(q, t1) => { Term::att(q, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, *t1))) }
-        Term::lseq(t1, t2) => { Term::lseq( Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t2))) }
-        Term::bseq(sp, t1, t2) => { Term::bseq(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t2))) }
-        Term::bpar(sp, t1, t2) => { Term::bpar(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden,*t2))) }
+        Term::asp(a) => { Term::asp(add_golden_evidence_provisioning_args_asp(p, init_et, t_golden, et_ctxt, a)) }
+        Term::att(q, t1) => { Term::att(q, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1))) }
+        Term::lseq(t1, t2) => { Term::lseq( Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
+        Term::bseq(sp, t1, t2) => { Term::bseq(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
+        Term::bpar(sp, t1, t2) => { Term::bpar(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
     }
 }
 
@@ -296,11 +299,11 @@ pub fn build_golden_evidence_provisioning_asp (fp:&str) -> Term {
     Term::asp(ASP::ASPC(params))
 }
 
-pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: &Term, t:Term) -> Term {
+pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: &Term, et_ctxt:&GlobalContext, t:Term) -> Term {
 
     let prov_asp: Term = build_golden_evidence_provisioning_asp(fp);
     let new_t_golden: Term = add_provisioning_args(t_golden.clone());
-    let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, prov_asp);
+    let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, et_ctxt, prov_asp);
     let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
     add_provisioning_args(new_term)
     /*
