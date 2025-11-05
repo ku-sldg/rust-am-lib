@@ -1,11 +1,11 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value};
+use serde_json::{json, Value};
 use std::collections::HashMap;
 
 pub type Plc = String;
@@ -121,9 +121,199 @@ pub enum RawEv {
 
 pub type Evidence = (RawEv, EvidenceT);
 
+pub fn get_rawev (e:Evidence) -> RawEvT {
+    match e {
+        (RawEv::RawEv(v), _) => {v}
+    }
+}
+
+pub fn get_et (e:Evidence) -> EvidenceT {
+    match e {
+        (_, et) => {et}
+    }
+}
+
 pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
 
 pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+
+pub fn eval_asp (a:ASP, p:Plc, e:EvidenceT) -> Result<EvidenceT> {
+
+        match a {
+            ASP::ASPC(params) => {
+                Ok(EvidenceT::asp_evt(p, params, Box::new(e)))
+            }
+            _ => {Ok(EvidenceT::mt_evt)}
+        }
+}
+
+fn splitEv_T_l (sp:Split, e:EvidenceT) -> EvidenceT {
+    match sp {
+        Split{split1:SP::ALL, split2:_} => {e}
+        _ => EvidenceT::mt_evt
+    }
+}
+
+fn splitEv_T_r (sp:Split, e:EvidenceT) -> EvidenceT {
+    match sp {
+        Split{split1:_, split2:SP::ALL} => {e}
+        _ => EvidenceT::mt_evt
+    }
+}
+
+pub fn eval (p:Plc, e:EvidenceT, t:Term) -> Result<EvidenceT> {
+
+    match t {
+        Term::asp(a)=> {eval_asp(a, p.clone(), e)}
+        Term::att(q, t1) => {eval(q, e,*t1)}
+        Term::lseq(t1, t2) => {
+            let e1 = eval(p.clone(), e, *t1)?;
+            eval(p, e1, *t2)
+        }
+        Term::bseq(s, t1, t2) => {
+            let e1 = eval(p.clone(), splitEv_T_l(s.clone(), e.clone()), *t1)?;
+            let e2 = eval(p.clone(), splitEv_T_r(s, e), *t2)?;
+            Ok(EvidenceT::split_evt(Box::new(e1), Box::new(e2)))
+        }
+        Term::bpar(s, t1, t2) => {
+            let e1 = eval(p.clone(), splitEv_T_l(s.clone(), e.clone()), *t1)?;
+            let e2 = eval(p.clone(), splitEv_T_r(s, e), *t2)?;
+            Ok(EvidenceT::split_evt(Box::new(e1), Box::new(e2)))
+        }
+
+    }
+
+}
+
+pub fn add_key_to_json_args (k:String, v:serde_json::Value, old_v:serde_json::Value) -> serde_json::Value {
+
+
+    let mut data: serde_json::Value = old_v.clone();
+
+    if let Some(obj) = data.as_object_mut() {
+        obj.insert(k, v);
+        let res = serde_json::to_value(&obj).expect("hi");
+        return res
+
+    }
+    else {
+        if data.is_null() {
+            let mut obj: serde_json::Map<String,Value> = serde_json::Map::new();
+            obj.insert(k, v);
+            let res = serde_json::to_value(&obj).expect("hi");
+            return res
+        }
+        else {
+            panic!("ASP_ARGS of the wrong form (not NULL or Object)")
+            //return serde_json::Value::Null
+        }
+    }
+
+}
+
+pub fn add_provisioning_args_asp (a:ASP) -> ASP {
+
+    let aid_key = "asp_id_appr".to_string();
+    let tid_key = "targ_id_appr".to_string();
+
+    match a {
+        ASP::ASPC(ps) => {
+
+            match ps {
+                ASP_PARAMS { ASP_ID:aid, ASP_ARGS:args, ASP_PLC:p, ASP_TARG_ID:tid } => 
+                    {
+                        let new_args_1: Value = add_key_to_json_args(aid_key.clone(), Value::String(aid.clone()), args.clone());
+                        let new_args: Value = add_key_to_json_args(tid_key, Value::String(tid.clone()), new_args_1);
+                        let new_ps = ASP_PARAMS {ASP_ID: aid, ASP_ARGS: new_args, ASP_PLC:p, ASP_TARG_ID:tid};
+                        return ASP::ASPC(new_ps)
+                    }
+            }
+        }
+        _ => {return a}
+    }
+
+}
+
+pub fn add_provisioning_args (t:Term) -> Term {
+    match t {
+        Term::asp(a) => { Term::asp(add_provisioning_args_asp(a)) }
+        Term::att(p, t1) => { Term::att(p, Box::new(add_provisioning_args(*t1))) }
+        Term::lseq(t1, t2) => { Term::lseq( Box::new(add_provisioning_args(*t1)), Box::new(add_provisioning_args(*t2))) }
+        Term::bseq(sp, t1, t2) => { Term::bseq(sp, Box::new(add_provisioning_args(*t1)), Box::new(add_provisioning_args(*t2))) }
+        Term::bpar(sp, t1, t2) => { Term::bpar(sp, Box::new(add_provisioning_args(*t1)), Box::new(add_provisioning_args(*t2))) }
+    }
+}
+
+pub static PROVISION_ASP_ID: &str = "provision_goldenevidence"; //executables/provision_goldenevidence
+pub static ET_GOLDEN_STR: &str = "et_golden";
+pub static ET_CTXT_STR: &str = "et_context";
+pub static FILEPATH_GOLDEN_FIELD_STR: &str = "filepath_golden";
+pub static ENV_VAR_GOLDEN_FIELD_STR: &str = "env_var_golden";
+
+pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, old_args:Value) -> Result<Value> {
+    let golden_et = eval(p.clone(),et.clone(), t.clone())?;
+    let golden_et_json = serde_json::to_value(&golden_et)?;
+    let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
+    let new_args = add_key_to_json_args(ET_GOLDEN_STR.to_string(), golden_et_json, old_args);
+    let new_args_final = add_key_to_json_args(ET_CTXT_STR.to_string(), et_ctxt_json, new_args);
+    return Ok(new_args_final);
+}
+
+pub fn add_golden_evidence_provisioning_args_asp (p:&Plc, init_et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, a:ASP) -> ASP {
+    match a {
+        ASP::ASPC(ps) => {
+
+            match ps.clone() {
+                ASP_PARAMS { ASP_ID:aid, ASP_ARGS:args, ASP_PLC:pid, ASP_TARG_ID:tid } => 
+                    {
+                        if aid == PROVISION_ASP_ID.to_string() {
+                            let new_args = generate_golden_evidence_provisioning_args(&p, &init_et, &t, et_ctxt, args).expect("hi");
+                            let new_ps = ASP_PARAMS {ASP_ID: aid, ASP_ARGS: new_args, ASP_PLC:pid, ASP_TARG_ID:tid};
+                            return ASP::ASPC(new_ps)
+                        }
+                        else { return ASP::ASPC(ps) }
+                    }
+            }
+        }
+        _ => {return a}
+    }
+}
+
+pub fn add_golden_evidence_provisioning_args (p:&Plc, init_et:&EvidenceT, t_golden:&Term, et_ctxt:&GlobalContext, t:Term) -> Term {
+    match t {
+        Term::asp(a) => { Term::asp(add_golden_evidence_provisioning_args_asp(p, init_et, t_golden, et_ctxt, a)) }
+        Term::att(q, t1) => { Term::att(q, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1))) }
+        Term::lseq(t1, t2) => { Term::lseq( Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
+        Term::bseq(sp, t1, t2) => { Term::bseq(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
+        Term::bpar(sp, t1, t2) => { Term::bpar(sp, Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t1)), Box::new(add_golden_evidence_provisioning_args(p, init_et, t_golden, et_ctxt, *t2))) }
+    }
+}
+
+pub fn build_golden_evidence_provisioning_asp (fp:&str) -> Term {
+
+    let args: Value = json!({FILEPATH_GOLDEN_FIELD_STR: fp,
+                             ENV_VAR_GOLDEN_FIELD_STR: ""});
+    let my_plc: Plc = "PROV_PLC".to_string();
+    let my_targ: Plc = "PROV_TARG".to_string();
+    let params: ASP_PARAMS = ASP_PARAMS { ASP_ID: PROVISION_ASP_ID.to_string(), ASP_ARGS: args, ASP_PLC: my_plc, ASP_TARG_ID: my_targ };
+    Term::asp(ASP::ASPC(params))
+}
+
+pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: &Term, et_ctxt:&GlobalContext, t:Term) -> Term {
+
+    let prov_asp: Term = build_golden_evidence_provisioning_asp(fp);
+    let new_t_golden: Term = add_provisioning_args(t_golden.clone());
+    let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, et_ctxt, prov_asp);
+    let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
+    add_provisioning_args(new_term)
+    /*
+    let prov_term_final: Term = add_provisioning_args(prov_term.clone());
+    let old_term_final: Term = add_provisioning_args(t);
+    Term::lseq(Box::new(old_term_final), Box::new(prov_term_final))
+    */
+}
+
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
@@ -327,6 +517,85 @@ fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Resu
     m.insert(i, inner_map);
     
     Ok(m.clone())
+}
+
+static EV_SLICE_ERROR_STR : &str = "Error in do_EvidenceSlice_inner() in copland.rs";
+
+fn do_EvidenceSlice_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, ps:ASP_PARAMS) -> Result<RawEvT> {
+
+    match et {
+        EvidenceT::mt_evt => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+        EvidenceT::nonce_evt(_) => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+        EvidenceT::split_evt(et1, et2) => {
+
+            let et1_size= et_size(g.clone(),*et1.clone())?;
+            let et2_size = et_size(g.clone(), *et2.clone())?;
+
+            let (r1, rest) = peel_n_rawev(et1_size, r)?;
+
+            let e1_res = do_EvidenceSlice_inner(*et1, r1, g.clone(), ps.clone());
+
+            match e1_res {
+                Ok(v) => {Ok(v)}
+
+                _ => {
+                    let (r2, _) = peel_n_rawev(et2_size, rest)?;
+                    do_EvidenceSlice_inner(*et2, r2, g, ps)
+                }
+            }
+        }
+        EvidenceT::left_evt(et2) => {
+            do_EvidenceSlice_inner(*et2, r, g, ps)
+        }
+        EvidenceT::right_evt(et2) => {
+            do_EvidenceSlice_inner(*et2, r, g, ps)
+        }
+        EvidenceT::asp_evt(_, par, et2 ) => {
+
+            let aid = par.ASP_ID.clone();
+            let tid = par.ASP_TARG_ID;
+
+            let n = 
+            match g.ASP_Types.get(&aid) {
+                None => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+                Some(evsig) => {
+                    match evsig.FWD {
+                        FWD::REPLACE => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    Ok(n)
+                                }
+                                _ => {Err(anyhow!(EV_SLICE_ERROR_STR))}
+                            }
+                        }
+                        FWD::EXTEND => {
+                            match evsig.EvOutSig {
+                                EvOutSig::OutN(n) => {
+                                    Ok(n)
+                                }
+                                _ => {Err(anyhow!(EV_SLICE_ERROR_STR))} /* TODO: add OutUnWrap cases once supported */
+                            }            
+                        }
+
+                        _ => {Err(anyhow!(EV_SLICE_ERROR_STR))} /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
+                    }
+                }
+            }?;
+
+            let (r1, rest) = peel_n_rawev(n, r)?;
+            
+            if (aid, tid) == (ps.ASP_ID.clone(), ps.ASP_TARG_ID.clone()) {
+                Ok(r1)
+            }
+            else {       
+                do_EvidenceSlice_inner(*et2, rest, g, ps)
+            }
+        }      
+    }
+}
+
+pub fn do_EvidenceSlice(et:EvidenceT, r:RawEvT, g:GlobalContext, ps:ASP_PARAMS) -> Result<RawEvT> {
+    do_EvidenceSlice_inner(et, r, g, ps)
 }
 
 fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:AppraisalSummary) -> Result<AppraisalSummary> {
