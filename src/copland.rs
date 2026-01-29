@@ -5,8 +5,11 @@ use anyhow::{Result, anyhow};
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json, Value, from_value};
+use serde_stacker::Deserializer;
 use std::collections::HashMap;
+
+
 
 pub type Plc = String;
 pub type N_ID = String;
@@ -734,7 +737,10 @@ fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     }
 
     let json_req = &args[1];
-    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
+    let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+    let req: ASPRunRequest = from_value(reqval).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
 
@@ -805,6 +811,19 @@ pub fn term_add_args(t:Term, args:Value) -> Term {
     }
 }
 
+fn deserialize_deep_json(json_data: &str) -> serde_json::Result<Value> {
+    let mut de = serde_json::de::Deserializer::from_str(json_data);
+    de.disable_recursion_limit(); // This method is only available with the feature
+    
+    // Wrap with serde_stacker's Deserializer to use a dynamically growing stack
+    let stacker_de = Deserializer::new(&mut de);
+    
+    // Deserialize the data
+    let value = Value::deserialize(stacker_de)?;
+    
+    Ok(value)
+}
+
 pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>) -> ! {
     let (ev, args) = gather_args_and_req();
     match body(ev, args) {
@@ -843,9 +862,21 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     }
 
     let json_req = &args[1];
+
+    let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+    let req: ASPRunRequest = from_value(reqval).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+
+    /*
     let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
+    */
+
+
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
             let response = successfulASPRunResponse(vec_to_rawev(ev));
