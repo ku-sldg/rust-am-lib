@@ -5,7 +5,8 @@ use anyhow::{Result, anyhow};
 use base64::Engine;
 use core::panic;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json, Value, from_value};
+use serde_stacker::Deserializer;
 use std::collections::HashMap;
 
 pub type Plc = String;
@@ -135,7 +136,13 @@ pub fn get_et (e:Evidence) -> EvidenceT {
 
 pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
 
-pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppSummReportValue {
+    pub meta: String,
+    pub result: bool
+}
+
+pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, AppSummReportValue>>;
 
 pub fn eval_asp (a:ASP, p:Plc, e:EvidenceT) -> Result<EvidenceT> {
 
@@ -503,7 +510,31 @@ fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
     else {false}
 }
 
-fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ASP_ARGS_ReadfileRange {
+    filepath: String,
+    start_index: usize,
+    end_index: usize, 
+    metadata: String, 
+    meta: String,
+    env_var_golden: String,
+    filepath_golden: String
+}
+
+fn add_asp_summary(par:ASP_PARAMS, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+
+    let i = par.ASP_ID;
+    let tid = par.ASP_TARG_ID;
+    let asp_args = par.ASP_ARGS;
+
+    let v: std::result::Result<ASP_ARGS_ReadfileRange, serde_json::Error> = serde_json::from_value(asp_args);
+
+
+    let meta_string = 
+        match v {
+            Ok(x) => {x.meta}
+            _ => {"".to_string()}
+        };
 
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
@@ -513,7 +544,8 @@ fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Resu
             None => {HashMap::new()}
             Some(mm) => mm.clone()
         };
-    inner_map.insert(tid, b);
+    let app_report_val: AppSummReportValue = AppSummReportValue { meta: meta_string, result: b };
+    inner_map.insert(tid, app_report_val);
     m.insert(i, inner_map);
     
     Ok(m.clone())
@@ -632,13 +664,8 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::REPLACE => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
-                                    /*
-                                    print!("\n\nin REPLACE arm\n\n");
-                                    print!("\nn: {:?}", n);
-                                    print!("\nr: {:?}", r);
-                                    */
                                     let (r1, _) = peel_n_rawev(n, r)?;
-                                    add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)
+                                    add_asp_summary(par, r1, s)
                                 }
                                 _ => {Ok(s)}
                             }
@@ -648,7 +675,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                                 EvOutSig::OutN(n) => {
                                     //print!("\n\nin EXTEND arm\n\n");
                                     let (r1, rest) = peel_n_rawev(n, r)?;
-                                    let res = add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)?;
+                                    let res = add_asp_summary(par, r1, s)?;
                                     do_AppraisalSummary_inner(*et2, rest, g, res)
                                 }
                                 _ => {Ok(s)}
@@ -679,7 +706,7 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         println!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            println!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+            println!("\t{}(meta=\"{}\"): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
     println!("---------------------------------------------------------------");
@@ -694,9 +721,10 @@ pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         eprintln!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            eprintln!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+            eprintln!("\t{}(meta=\"{}\"): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
+    eprintln!("\nAppraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
     eprintln!("---------------------------------------------------------------");
     eprintln!();
 }
@@ -734,7 +762,10 @@ fn gather_args_and_req() -> (ASP_RawEv, ASP_ARGS) {
     }
 
     let json_req = &args[1];
-    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
+    let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+    let req: ASPRunRequest = from_value(reqval).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
 
@@ -805,6 +836,19 @@ pub fn term_add_args(t:Term, args:Value) -> Term {
     }
 }
 
+fn deserialize_deep_json(json_data: &str) -> serde_json::Result<Value> {
+    let mut de = serde_json::de::Deserializer::from_str(json_data);
+    de.disable_recursion_limit(); // This method is only available with the feature
+    
+    // Wrap with serde_stacker's Deserializer to use a dynamically growing stack
+    let stacker_de = Deserializer::new(&mut de);
+    
+    // Deserialize the data
+    let value = Value::deserialize(stacker_de)?;
+    
+    Ok(value)
+}
+
 pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>) -> ! {
     let (ev, args) = gather_args_and_req();
     match body(ev, args) {
@@ -843,9 +887,14 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     }
 
     let json_req = &args[1];
-    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
+
+    let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
+    let req: ASPRunRequest = from_value(reqval).unwrap_or_else(|error| {
+        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
+    });
+
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
             let response = successfulASPRunResponse(vec_to_rawev(ev));
