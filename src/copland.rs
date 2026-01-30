@@ -381,6 +381,7 @@ pub struct AppraisalSummaryResponse {
     pub TYPE: String,
     pub ACTION: String,
     pub SUCCESS: bool,
+    pub APPRAISAL_RESULT: bool,
     pub PAYLOAD: AppraisalSummary
 }
 
