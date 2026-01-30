@@ -520,7 +520,8 @@ fn add_asp_summary(/*i:ASP_ID, tid:TARG_ID,*/par:ASP_PARAMS, ls:RawEvT, s:Apprai
 
     let maybe_meta_string = asp_args.get("meta");
 
-    let meta_string = 
+    let meta_string = "aaaaa".to_string();
+    /*
         match maybe_meta_string {
             Some(s) => {
                 match s {
@@ -530,6 +531,7 @@ fn add_asp_summary(/*i:ASP_ID, tid:TARG_ID,*/par:ASP_PARAMS, ls:RawEvT, s:Apprai
             }
             None => {"bbb".to_string()}
     };
+    */
 
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
