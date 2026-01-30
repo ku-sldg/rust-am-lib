@@ -525,10 +525,10 @@ fn add_asp_summary(/*i:ASP_ID, tid:TARG_ID,*/par:ASP_PARAMS, ls:RawEvT, s:Apprai
             Some(s) => {
                 match s {
                     Value::String(v) => {v.to_string()}
-                    _ => {"".to_string()}
+                    _ => {"aaa".to_string()}
                 }
             }
-            None => {"".to_string()}
+            None => {"bbb".to_string()}
     };
 
     let b = check_simple_appraised_rawev(ls);
