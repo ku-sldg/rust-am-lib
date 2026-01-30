@@ -138,7 +138,13 @@ pub fn get_et (e:Evidence) -> EvidenceT {
 
 pub static EMPTY_EVIDENCE: Evidence = (RawEv::RawEv (vec![]), EvidenceT::mt_evt);
 
-pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, bool>>;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AppSummReportValue {
+    pub meta: String,
+    pub result: bool
+}
+
+pub type AppraisalSummary = HashMap<ASP_ID, HashMap<TARG_ID, AppSummReportValue>>;
 
 pub fn eval_asp (a:ASP, p:Plc, e:EvidenceT) -> Result<EvidenceT> {
 
@@ -506,7 +512,24 @@ fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
     else {false}
 }
 
-fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+fn add_asp_summary(/*i:ASP_ID, tid:TARG_ID,*/par:ASP_PARAMS, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+
+    let i = par.ASP_ID;
+    let tid = par.ASP_TARG_ID;
+    let asp_args = par.ASP_ARGS;
+
+    let maybe_meta_string = asp_args.get("meta");
+
+    let meta_string = 
+        match maybe_meta_string {
+            Some(s) => {
+                match s {
+                    Value::String(v) => {v.to_string()}
+                    _ => {"".to_string()}
+                }
+            }
+            None => {"".to_string()}
+    };
 
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
@@ -516,7 +539,8 @@ fn add_asp_summary(i:ASP_ID, tid:TARG_ID, ls:RawEvT, s:AppraisalSummary) -> Resu
             None => {HashMap::new()}
             Some(mm) => mm.clone()
         };
-    inner_map.insert(tid, b);
+    let app_report_val: AppSummReportValue = AppSummReportValue { meta: meta_string, result: b };
+    inner_map.insert(tid, app_report_val);
     m.insert(i, inner_map);
     
     Ok(m.clone())
@@ -641,7 +665,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                                     print!("\nr: {:?}", r);
                                     */
                                     let (r1, _) = peel_n_rawev(n, r)?;
-                                    add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)
+                                    add_asp_summary(par, r1, s)
                                 }
                                 _ => {Ok(s)}
                             }
@@ -651,7 +675,7 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                                 EvOutSig::OutN(n) => {
                                     //print!("\n\nin EXTEND arm\n\n");
                                     let (r1, rest) = peel_n_rawev(n, r)?;
-                                    let res = add_asp_summary(par.ASP_ID.to_string(), par.ASP_TARG_ID.to_string(), r1, s)?;
+                                    let res = add_asp_summary(par, r1, s)?;
                                     do_AppraisalSummary_inner(*et2, rest, g, res)
                                 }
                                 _ => {Ok(s)}
@@ -682,7 +706,7 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         println!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            println!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+            println!("\t{}({}): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
     println!("---------------------------------------------------------------");
@@ -697,9 +721,10 @@ pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         eprintln!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            eprintln!("\t{}: {}", inner_key, (bool_to_passed_string(inner_val)))
+            eprintln!("\t{}({}): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
+    eprintln!("Appraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
     eprintln!("---------------------------------------------------------------");
     eprintln!();
 }
