@@ -706,7 +706,7 @@ pub fn print_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         println!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            println!("\t{}({}): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
+            println!("\t{}(meta=\"{}\"): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
     println!("---------------------------------------------------------------");
@@ -724,7 +724,7 @@ pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
             eprintln!("\t{}({}): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
-    eprintln!("Appraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
+    eprintln!("\nAppraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
     eprintln!("---------------------------------------------------------------");
     eprintln!();
 }
