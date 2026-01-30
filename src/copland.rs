@@ -9,8 +9,6 @@ use serde_json::{json, Value, from_value};
 use serde_stacker::Deserializer;
 use std::collections::HashMap;
 
-
-
 pub type Plc = String;
 pub type N_ID = String;
 pub type ASP_ID = String;
@@ -537,20 +535,6 @@ fn add_asp_summary(par:ASP_PARAMS, ls:RawEvT, s:AppraisalSummary) -> Result<Appr
             Ok(x) => {x.meta}
             _ => {"".to_string()}
         };
-     //asp_args.get("meta");
-
-    //let meta_string = "aaaaa".to_string();
-    /*
-        match maybe_meta_string {
-            Some(s) => {
-                match s {
-                    Value::String(v) => {v.to_string()}
-                    _ => {"aaa".to_string()}
-                }
-            }
-            None => {"bbb".to_string()}
-    };
-    */
 
     let b = check_simple_appraised_rawev(ls);
     let mut m = s.clone();
@@ -680,11 +664,6 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
                         FWD::REPLACE => {
                             match evsig.EvOutSig {
                                 EvOutSig::OutN(n) => {
-                                    /*
-                                    print!("\n\nin REPLACE arm\n\n");
-                                    print!("\nn: {:?}", n);
-                                    print!("\nr: {:?}", r);
-                                    */
                                     let (r1, _) = peel_n_rawev(n, r)?;
                                     add_asp_summary(par, r1, s)
                                 }
@@ -915,13 +894,6 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     let req: ASPRunRequest = from_value(reqval).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
-
-    /*
-    let req: ASPRunRequest = serde_json::from_str(json_req).unwrap_or_else(|error| {
-        respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
-    });
-    */
-
 
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
