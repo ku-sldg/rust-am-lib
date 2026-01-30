@@ -512,15 +512,34 @@ fn check_simple_appraised_rawev (ls:RawEvT) -> bool {
     else {false}
 }
 
-fn add_asp_summary(/*i:ASP_ID, tid:TARG_ID,*/par:ASP_PARAMS, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ASP_ARGS_ReadfileRange {
+    filepath: String,
+    start_index: usize,
+    end_index: usize, 
+    metadata: String, 
+    meta: String,
+    env_var_golden: String,
+    filepath_golden: String
+}
+
+fn add_asp_summary(par:ASP_PARAMS, ls:RawEvT, s:AppraisalSummary) -> Result<AppraisalSummary> {
 
     let i = par.ASP_ID;
     let tid = par.ASP_TARG_ID;
     let asp_args = par.ASP_ARGS;
 
-    let maybe_meta_string = asp_args.get("meta");
+    let v: std::result::Result<ASP_ARGS_ReadfileRange, serde_json::Error> = serde_json::from_value(asp_args);
 
-    let meta_string = "aaaaa".to_string();
+
+    let meta_string = 
+        match v {
+            Ok(x) => {x.meta}
+            _ => {"".to_string()}
+        };
+     //asp_args.get("meta");
+
+    //let meta_string = "aaaaa".to_string();
     /*
         match maybe_meta_string {
             Some(s) => {
