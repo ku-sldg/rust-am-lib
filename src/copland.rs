@@ -742,7 +742,7 @@ pub fn eprint_appsumm(appsumm:AppraisalSummary, appsumm_bool: bool) -> () {
     for (key, value) in appsumm.into_iter() {
         eprintln!("{}:", key);
         for (inner_key, inner_val) in value.into_iter() {
-            eprintln!("\t{}({}): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
+            eprintln!("\t{}(meta=\"{}\"): {}", inner_key, inner_val.meta, (bool_to_passed_string(inner_val.result)))
         }
     }
     eprintln!("\nAppraisal Summary: {}\n", bool_to_passed_string(appsumm_bool));
