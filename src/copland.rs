@@ -881,7 +881,7 @@ pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>
 
 pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
-    eprintln!("--------START of handle_body()----------");
+    panic!("--------START of handle_body()----------");
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
