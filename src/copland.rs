@@ -907,7 +907,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
             println!("{resp_json}");
 
             if req.ASP_ID == "readfile_range".to_string()
-                { eprintln!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") }
+                { panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") }
             if req.ASP_ID == "provision_goldenevidence".to_string()
                 { panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") }
             std::process::exit(0);
