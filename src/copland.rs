@@ -896,8 +896,6 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
 
-    panic!("\\n\n\n GOT PAST deserialze_deep_json in handle_body()");
-
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
             let response = successfulASPRunResponse(vec_to_rawev(ev));
