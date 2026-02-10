@@ -905,7 +905,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
             });
             println!("{resp_json}");
-            panic!("\\n\n GOT beyond println!(\"{resp_json}\"); in handle_body()\n\n\n");
+            panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n");
             std::process::exit(0);
         }
         Err(reason) => {
