@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value, from_value};
 use serde_stacker::Deserializer;
 use std::collections::HashMap;
+use std::fs;
+use std::env;
 
 pub type Plc = String;
 pub type N_ID = String;
@@ -257,12 +259,50 @@ pub static ET_CTXT_STR: &str = "et_context";
 pub static FILEPATH_GOLDEN_FIELD_STR: &str = "filepath_golden";
 pub static ENV_VAR_GOLDEN_FIELD_STR: &str = "env_var_golden";
 
+fn write_string_to_output_dir (maybe_out_dir:Option<String>, fp_suffix: String, default_mid_path:String, outstring:String) -> std::io::Result<String> {
+
+    let fp_prefix : String = match &maybe_out_dir {
+        Some(fp) => {
+            fp.to_string()
+        }
+        None => {
+
+            let cur_dir = env::current_dir()?;
+            let cur_dir_string = cur_dir.to_str().unwrap();
+            let default_path = default_mid_path;
+            let default_prefix: String = format!("{cur_dir_string}/{default_path}");
+            default_prefix
+        }
+    };
+
+    let full_req_fp = format!("{fp_prefix}/{fp_suffix}");
+
+    fs::create_dir_all(fp_prefix)?;
+    fs::write(&full_req_fp, outstring)?;
+    Ok(full_req_fp)
+}
+
 pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, old_args:Value) -> Result<Value> {
     let golden_et = eval(p.clone(),et.clone(), t.clone())?;
-    let golden_et_json = serde_json::to_value(&golden_et)?;
-    let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
-    let new_args = add_key_to_json_args(ET_GOLDEN_STR.to_string(), golden_et_json, old_args);
-    let new_args_final = add_key_to_json_args(ET_CTXT_STR.to_string(), et_ctxt_json, new_args);
+
+    let file_json_val : (EvidenceT, GlobalContext) = (et.clone(), et_ctxt.clone());
+
+    let file_json_string = serde_json::to_string(&file_json_val)?;
+    let file_json_mid_dir: String = "testing/outputs/".to_string();
+    let file_json_name: String = "temp_golden_evidence_env.json".to_string();
+
+    write_string_to_output_dir(None, file_json_name.clone(), file_json_mid_dir, file_json_string)?;
+
+    //let golden_et_json = serde_json::to_value(&golden_et)?;
+    //let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
+
+    let evidence_json_fp = serde_json::to_value(&file_json_name)?;
+
+    let ctxt_json_fp = serde_json::to_value("")?;
+
+
+    let new_args = add_key_to_json_args(ET_GOLDEN_STR.to_string(), evidence_json_fp, old_args);
+    let new_args_final = add_key_to_json_args(ET_CTXT_STR.to_string(), ctxt_json_fp, new_args);
     return Ok(new_args_final);
 }
 
