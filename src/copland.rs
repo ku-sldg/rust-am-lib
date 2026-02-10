@@ -946,11 +946,12 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
             if req.ASP_ID == "provision_goldenevidence".to_string()
                 {   //eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    panic!("\\n\n GOT TO Ok branch in handle_body() of provision_goldenevidence ASP\n\n\n") }
+                    //panic!("\\n\n GOT TO Ok branch in handle_body() of provision_goldenevidence ASP\n\n\n") 
+                }
             let response = successfulASPRunResponse(vec_to_rawev(ev));
             let hi = response.SUCCESS;
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
-                panic!("\\n\n GOT TO error handler of serde_json::to_string(&response) in handle_body()\n\n\n");
+                //panic!("\\n\n GOT TO error handler of serde_json::to_string(&response) in handle_body()\n\n\n");
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
             });
             println!("{resp_json}");
@@ -962,13 +963,15 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
             */
             if req.ASP_ID == "provision_goldenevidence".to_string()
                 {   eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") }
+                    //panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") 
+                }
             std::process::exit(0);
         }
         Err(reason) => {
             if req.ASP_ID == "provision_goldenevidence".to_string()
                 {   //eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    panic!("\\n\n GOT TO Err branch in handle_body() of provision_goldenevidence ASP\n\n\n Reason:{}", reason) }
+                    //panic!("\\n\n GOT TO Err branch in handle_body() of provision_goldenevidence ASP\n\n\n Reason:{}", reason) 
+                }
             //panic!("\\n\n GOT TO error in handle_body()\n\n\n");
             respond_with_failure(reason.to_string());
         }
