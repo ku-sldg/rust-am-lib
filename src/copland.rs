@@ -889,6 +889,8 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
     let json_req = &args[1];
 
+    eprintln!("--------GOT BEYOND json_req= in handle_body()----------");
+
     let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
     });
