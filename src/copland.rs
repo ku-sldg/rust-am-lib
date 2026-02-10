@@ -898,6 +898,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
+            panic!("\\n\n GOT TO Ok branch in handle_body()\n\n\n");
             let response = successfulASPRunResponse(vec_to_rawev(ev));
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
@@ -906,7 +907,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
             std::process::exit(0);
         }
         Err(reason) => {
-            panic!("\\n\n GOT TO error in handle_body()\n\n\n");
+            //panic!("\\n\n GOT TO error in handle_body()\n\n\n");
             respond_with_failure(reason.to_string());
         }
     }
