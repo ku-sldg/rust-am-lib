@@ -291,12 +291,12 @@ pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Ter
     let file_json_mid_dir: String = "testing/outputs/".to_string();
     let file_json_name: String = "temp_golden_evidence_env.json".to_string();
 
-    write_string_to_output_dir(None, file_json_name.clone(), file_json_mid_dir, file_json_string)?;
+    let file_json_fp_full = write_string_to_output_dir(None, file_json_name.clone(), file_json_mid_dir, file_json_string)?;
 
     //let golden_et_json = serde_json::to_value(&golden_et)?;
     //let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
 
-    let evidence_json_fp = serde_json::to_value(&file_json_name)?;
+    let evidence_json_fp = serde_json::to_value(&file_json_fp_full)?;
 
     let ctxt_json_fp = serde_json::to_value("")?;
 
