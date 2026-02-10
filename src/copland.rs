@@ -285,7 +285,7 @@ fn write_string_to_output_dir (maybe_out_dir:Option<String>, fp_suffix: String, 
 pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, old_args:Value) -> Result<Value> {
     let golden_et = eval(p.clone(),et.clone(), t.clone())?;
 
-    let file_json_val : (EvidenceT, GlobalContext) = (et.clone(), et_ctxt.clone());
+    let file_json_val : (EvidenceT, GlobalContext) = (golden_et.clone(), et_ctxt.clone());
 
     let file_json_string = serde_json::to_string(&file_json_val)?;
     let file_json_mid_dir: String = "testing/outputs/".to_string();
