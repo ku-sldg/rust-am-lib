@@ -906,6 +906,7 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
             std::process::exit(0);
         }
         Err(reason) => {
+            panic!("\\n\n GOT TO error in handle_body()\n\n\n");
             respond_with_failure(reason.to_string());
         }
     }
