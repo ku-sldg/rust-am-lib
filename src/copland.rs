@@ -899,6 +899,10 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
             //panic!("\\n\n GOT TO Ok branch in handle_body()\n\n\n");
+
+            if req.ASP_ID == "provision_goldenevidence".to_string()
+                {   //eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
+                    panic!("\\n\n GOT TO Ok branch in handle_body() of provision_goldenevidence ASP\n\n\n") }
             let response = successfulASPRunResponse(vec_to_rawev(ev));
             let hi = response.SUCCESS;
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
