@@ -10,6 +10,7 @@ use serde_stacker::Deserializer;
 use std::collections::HashMap;
 use std::fs;
 use std::env;
+use std::path::{Path};
 
 pub type Plc = String;
 pub type N_ID = String;
@@ -253,34 +254,35 @@ pub fn add_provisioning_args (t:Term) -> Term {
     }
 }
 
-pub static PROVISION_ASP_ID: &str = "provision_goldenevidence"; //executables/provision_goldenevidence
+pub static PROVISION_ASP_ID: &str = "provision_goldenevidence";
 pub static ET_GOLDEN_STR: &str = "et_golden";
 pub static ET_CTXT_STR: &str = "et_context";
 pub static FILEPATH_GOLDEN_FIELD_STR: &str = "filepath_golden";
 pub static ENV_VAR_GOLDEN_FIELD_STR: &str = "env_var_golden";
 pub static TEMP_GOLDEN_EVIDENCE_FILENAME_STR: &str = "temp_golden_evidence_environment.json";
+pub const DEFAULT_OUTPUT_DIR: &'static str = "testing/outputs/";
 
-fn write_string_to_output_dir (maybe_out_dir:Option<String>, fp_suffix: String, default_mid_path:String, outstring:String) -> std::io::Result<String> {
+pub fn write_string_to_output_dir (maybe_out_dir:Option<String>, fp_suffix: &Path, default_mid_path:&Path, outstring:String) -> std::io::Result<String> {
 
-    let fp_prefix : String = match &maybe_out_dir {
+    let fp_prefix : String = match maybe_out_dir {
         Some(fp) => {
-            fp.to_string()
+            fp
         }
         None => {
 
             let cur_dir = env::current_dir()?;
-            let cur_dir_string = cur_dir.to_str().unwrap();
             let default_path = default_mid_path;
-            let default_prefix: String = format!("{cur_dir_string}/{default_path}");
-            default_prefix
+            let default_prefix= cur_dir.join(default_path);
+            default_prefix.as_path().to_str().unwrap().to_string()
         }
     };
 
-    let full_req_fp = format!("{fp_prefix}/{fp_suffix}");
+    let full_req_fp_new = Path::new(&fp_prefix);
+    let full_req_fp = full_req_fp_new.join(fp_suffix);
 
     fs::create_dir_all(fp_prefix)?;
     fs::write(&full_req_fp, outstring)?;
-    Ok(full_req_fp)
+    Ok(full_req_fp.as_path().to_str().unwrap().to_string())
 }
 
 pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Term, et_ctxt:&GlobalContext, old_args:Value) -> Result<Value> {
@@ -289,18 +291,13 @@ pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Ter
     let file_json_val : (EvidenceT, GlobalContext) = (golden_et.clone(), et_ctxt.clone());
 
     let file_json_string = serde_json::to_string(&file_json_val)?;
-    let file_json_mid_dir: String = "testing/outputs/".to_string();
-    let file_json_name: String = TEMP_GOLDEN_EVIDENCE_FILENAME_STR.to_string();
+    let file_json_mid_dir= Path::new(DEFAULT_OUTPUT_DIR);
+    let file_json_name_path = Path::new(TEMP_GOLDEN_EVIDENCE_FILENAME_STR);
 
-    let file_json_fp_full = write_string_to_output_dir(None, file_json_name.clone(), file_json_mid_dir, file_json_string)?;
-
-    //let golden_et_json = serde_json::to_value(&golden_et)?;
-    //let et_ctxt_json = serde_json::to_value(&et_ctxt)?;
+    let file_json_fp_full = write_string_to_output_dir(None, file_json_name_path, file_json_mid_dir, file_json_string)?;
 
     let evidence_json_fp = serde_json::to_value(&file_json_fp_full)?;
-
     let ctxt_json_fp = serde_json::to_value("")?;
-
 
     let new_args = add_key_to_json_args(ET_GOLDEN_STR.to_string(), evidence_json_fp, old_args);
     let new_args_final = add_key_to_json_args(ET_CTXT_STR.to_string(), ctxt_json_fp, new_args);
@@ -354,14 +351,7 @@ pub fn append_provisioning_term (fp:&str, p:&Plc, init_et:&EvidenceT, t_golden: 
     let prov_term: Term = add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, et_ctxt, prov_asp);
     let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
     add_provisioning_args(new_term)
-    /*
-    let prov_term_final: Term = add_provisioning_args(prov_term.clone());
-    let old_term_final: Term = add_provisioning_args(t);
-    Term::lseq(Box::new(old_term_final), Box::new(prov_term_final))
-    */
 }
-
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Attestation_Session {
@@ -683,8 +673,6 @@ fn do_AppraisalSummary_inner(et:EvidenceT, r:RawEvT, g:GlobalContext, s:Appraisa
             let et2_size = et_size(g.clone(), *et2.clone())?;
 
             let (r1, rest) = peel_n_rawev(et1_size, r)?;
-            //print!("\net1_size: {:?}", et1_size);
-            //print!("\nr1: {:?}", r1);
             let (r2, _) = peel_n_rawev(et2_size, rest)?;
 
             let s1 = do_AppraisalSummary_inner(*et1, r1.clone(), g.clone(), s)?;
@@ -943,37 +931,15 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
-            //panic!("\\n\n GOT TO Ok branch in handle_body()\n\n\n");
 
-            if req.ASP_ID == "provision_goldenevidence".to_string()
-                {   //eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    //panic!("\\n\n GOT TO Ok branch in handle_body() of provision_goldenevidence ASP\n\n\n") 
-                }
             let response = successfulASPRunResponse(vec_to_rawev(ev));
-            let hi = response.SUCCESS;
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
-                //panic!("\\n\n GOT TO error handler of serde_json::to_string(&response) in handle_body()\n\n\n");
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
             });
             println!("{resp_json}");
-
-            /*
-            if req.ASP_ID == "readfile_range".to_string()
-                {   eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") }
-            */
-            if req.ASP_ID == "provision_goldenevidence".to_string()
-                {   eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    //panic!("\\n\n GOT beyond println!(resp_json); in handle_body()\n\n\n") 
-                }
             std::process::exit(0);
         }
         Err(reason) => {
-            if req.ASP_ID == "provision_goldenevidence".to_string()
-                {   //eprintln!("\n\n\n\n\n\n\n\n\n\n\n\nResponse success: {}\n\n\n\n\n\n\n\n\n\n\n\n", hi);
-                    //panic!("\\n\n GOT TO Err branch in handle_body() of provision_goldenevidence ASP\n\n\n Reason:{}", reason) 
-                }
-            //panic!("\\n\n GOT TO error in handle_body()\n\n\n");
             respond_with_failure(reason.to_string());
         }
     }
