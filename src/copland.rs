@@ -258,6 +258,7 @@ pub static ET_GOLDEN_STR: &str = "et_golden";
 pub static ET_CTXT_STR: &str = "et_context";
 pub static FILEPATH_GOLDEN_FIELD_STR: &str = "filepath_golden";
 pub static ENV_VAR_GOLDEN_FIELD_STR: &str = "env_var_golden";
+pub static TEMP_GOLDEN_EVIDENCE_FILENAME_STR: &str = "temp_golden_evidence_environment.json";
 
 fn write_string_to_output_dir (maybe_out_dir:Option<String>, fp_suffix: String, default_mid_path:String, outstring:String) -> std::io::Result<String> {
 
@@ -289,7 +290,7 @@ pub fn generate_golden_evidence_provisioning_args (p:&Plc, et:&EvidenceT, t:&Ter
 
     let file_json_string = serde_json::to_string(&file_json_val)?;
     let file_json_mid_dir: String = "testing/outputs/".to_string();
-    let file_json_name: String = "temp_golden_evidence_env.json".to_string();
+    let file_json_name: String = TEMP_GOLDEN_EVIDENCE_FILENAME_STR.to_string();
 
     let file_json_fp_full = write_string_to_output_dir(None, file_json_name.clone(), file_json_mid_dir, file_json_string)?;
 
