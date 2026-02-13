@@ -910,7 +910,6 @@ pub fn handle_appraisal_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<Result<()>>
 
 pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
-    eprintln!("--------START of handle_body()----------");
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 2 {
@@ -919,8 +918,6 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
     }
 
     let json_req = &args[1];
-
-    eprintln!("--------GOT BEYOND json_req= in handle_body()----------");
 
     let reqval = deserialize_deep_json(json_req).unwrap_or_else(|error| {
         respond_with_failure(format!("Failed to parse ASPRunRequest: {error:?}"));
@@ -931,7 +928,6 @@ pub fn handle_body(body: fn(ASP_RawEv, ASP_ARGS) -> Result<ASP_RawEv>) -> ! {
 
     match body(rawev_to_vec(req.RAWEV), req.ASP_ARGS) {
         Ok(ev) => {
-
             let response = successfulASPRunResponse(vec_to_rawev(ev));
             let resp_json = serde_json::to_string(&response).unwrap_or_else(|error| {
                 respond_with_failure(format!("Failed to json.encode response: {error:?}"));
