@@ -307,17 +307,18 @@ pub fn generate_golden_evidence_provisioning_args(
     t: &Term,
     et_ctxt: &GlobalContext,
     old_args: Value,
+    outdir: &String
 ) -> Result<Value> {
     let golden_et = eval(p.clone(), et.clone(), t.clone())?;
 
     let file_json_val: (EvidenceT, GlobalContext) = (golden_et.clone(), et_ctxt.clone());
 
     let file_json_string = serde_json::to_string(&file_json_val)?;
-    let file_json_mid_dir = Path::new(DEFAULT_OUTPUT_DIR);
+    let file_json_mid_dir = Path::new(""); //Path::new(DEFAULT_OUTPUT_DIR);
     let file_json_name_path = Path::new(TEMP_GOLDEN_EVIDENCE_FILENAME_STR);
 
     let file_json_fp_full = write_string_to_output_dir(
-        None,
+        Some((*outdir).clone()),
         file_json_name_path,
         file_json_mid_dir,
         file_json_string,
@@ -337,6 +338,7 @@ pub fn add_golden_evidence_provisioning_args_asp(
     t: &Term,
     et_ctxt: &GlobalContext,
     a: ASP,
+    outdir:&String
 ) -> ASP {
     match a {
         ASP::ASPC(ps) => match ps.clone() {
@@ -348,7 +350,7 @@ pub fn add_golden_evidence_provisioning_args_asp(
             } => {
                 if aid == PROVISION_ASP_ID.to_string() {
                     let new_args =
-                        generate_golden_evidence_provisioning_args(&p, &init_et, &t, et_ctxt, args)
+                        generate_golden_evidence_provisioning_args(&p, &init_et, &t, et_ctxt, args, outdir)
                             .expect("hi");
                     let new_ps = ASP_PARAMS {
                         ASP_ID: aid,
@@ -372,41 +374,42 @@ pub fn add_golden_evidence_provisioning_args(
     t_golden: &Term,
     et_ctxt: &GlobalContext,
     t: Term,
+    outdir: &String
 ) -> Term {
     match t {
         Term::asp(a) => Term::asp(add_golden_evidence_provisioning_args_asp(
-            p, init_et, t_golden, et_ctxt, a,
+            p, init_et, t_golden, et_ctxt, a, outdir
         )),
         Term::att(q, t1) => Term::att(
             q,
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t1,
+                p, init_et, t_golden, et_ctxt, *t1, outdir
             )),
         ),
         Term::lseq(t1, t2) => Term::lseq(
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t1,
+                p, init_et, t_golden, et_ctxt, *t1, outdir
             )),
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t2,
+                p, init_et, t_golden, et_ctxt, *t2, outdir
             )),
         ),
         Term::bseq(sp, t1, t2) => Term::bseq(
             sp,
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t1,
+                p, init_et, t_golden, et_ctxt, *t1, outdir
             )),
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t2,
+                p, init_et, t_golden, et_ctxt, *t2, outdir
             )),
         ),
         Term::bpar(sp, t1, t2) => Term::bpar(
             sp,
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t1,
+                p, init_et, t_golden, et_ctxt, *t1, outdir
             )),
             Box::new(add_golden_evidence_provisioning_args(
-                p, init_et, t_golden, et_ctxt, *t2,
+                p, init_et, t_golden, et_ctxt, *t2, outdir
             )),
         ),
     }
@@ -433,11 +436,12 @@ pub fn append_provisioning_term(
     t_golden: &Term,
     et_ctxt: &GlobalContext,
     t: Term,
+    outdir: &String
 ) -> Term {
     let prov_asp: Term = build_golden_evidence_provisioning_asp(fp);
     let new_t_golden: Term = add_provisioning_args(t_golden.clone());
     let prov_term: Term =
-        add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, et_ctxt, prov_asp);
+        add_golden_evidence_provisioning_args(p, init_et, &new_t_golden, et_ctxt, prov_asp, outdir);
     let new_term: Term = Term::lseq(Box::new(t), Box::new(prov_term));
     add_provisioning_args(new_term)
 }
