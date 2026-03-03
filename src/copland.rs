@@ -55,7 +55,9 @@ pub enum EvCombSig {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EvSig {
+    #[serde(rename = "FWD")]
     pub ev_comb_sig: EvCombSig,
+    #[serde(rename = "ATTRS")]
     pub attrs: Vec<String>,
 }
 
