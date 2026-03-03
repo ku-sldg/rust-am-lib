@@ -26,19 +26,31 @@ pub struct ASP_PARAMS {
     pub ASP_ARGS: ASP_ARGS,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum EvIn {
-    InAll,
-    InNone,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum EvInSig {
+    ALL,
+    NONE,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-//#[serde(tag = "FWD_CONSTRUCTOR", content = "FWD_BODY")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "FWD")]
 pub enum EvCombSig {
-    REPLACE(u32),
-    WRAP(u32),
+    REPLACE {
+        #[serde(rename = "_BODY")]
+        body: u32,
+    },
+    WRAP {
+        #[serde(rename = "_BODY")]
+        body: u32,
+    },
     UNWRAP,
-    EXTEND(u32, EvIn),
+    EXTEND {
+        #[serde(rename = "_BODY")]
+        body: u32,
+
+        #[serde(rename = "EvInSig")]
+        ev_in_sig: EvInSig,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -511,8 +523,11 @@ fn et_size(g: &GlobalContext, et: &EvidenceT) -> Result<u32> {
                 None => Ok(0),
                 Some(evsig) => {
                     match &evsig.ev_comb_sig {
-                        EvCombSig::REPLACE(n) => Ok(*n),
-                        EvCombSig::EXTEND(n, _isig) => {
+                        EvCombSig::REPLACE { body: n } => Ok(*n),
+                        EvCombSig::EXTEND {
+                            body: n,
+                            ev_in_sig: _isig,
+                        } => {
                             let n2 = et_size(g, et2)?;
                             Ok(n + n2)
                         }
@@ -647,15 +662,15 @@ fn do_EvidenceSlice_inner(
                 None => Err(anyhow!(EV_SLICE_ERROR_STR)),
                 Some(evsig) => {
                     match &evsig.ev_comb_sig {
-                        EvCombSig::REPLACE(n) => Ok(n),
-                        EvCombSig::EXTEND(n, _isig) => Ok(n),
+                        EvCombSig::REPLACE { body: n } => Ok(*n),
+                        EvCombSig::EXTEND { body: n, .. } => Ok(*n),
 
                         _ => Err(anyhow!(EV_SLICE_ERROR_STR)), /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
                     }
                 }
             }?;
 
-            let (r1, rest) = peel_n_rawev(*n, r)?;
+            let (r1, rest) = peel_n_rawev(n, r)?;
 
             if (aid) == (ps.ASP_ID.clone()) {
                 Ok(r1)
@@ -702,11 +717,14 @@ fn do_AppraisalSummary_inner(
                 None => Ok(s),
                 Some(evsig) => {
                     match &evsig.ev_comb_sig {
-                        EvCombSig::REPLACE(n) => {
+                        EvCombSig::REPLACE { body: n } => {
                             let (r1, _) = peel_n_rawev(*n, r)?;
                             add_asp_summary(par.clone(), r1, s)
                         }
-                        EvCombSig::EXTEND(n, _isig) => {
+                        EvCombSig::EXTEND {
+                            body: n,
+                            ev_in_sig: _isig,
+                        } => {
                             let (r1, rest) = peel_n_rawev(*n, r)?;
                             let res = add_asp_summary(par.clone(), r1, s)?;
                             do_AppraisalSummary_inner(et2, rest, g, res)
