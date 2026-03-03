@@ -427,8 +427,6 @@ pub struct ASPRunRequest {
     pub ACTION: String,
     pub ASP_ID: String,
     pub ASP_ARGS: ASP_ARGS,
-    pub ASP_PLC: Plc,
-    pub ASP_TARG_ID: TARG_ID,
     pub RAWEV: RawEv,
 }
 
