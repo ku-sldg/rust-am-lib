@@ -627,7 +627,11 @@ fn add_asp_summary(par: ASP_PARAMS, ls: RawEvT, s: AppraisalSummary) -> Result<A
     Ok(m.clone())
 }
 
-static EV_SLICE_ERROR_STR: &str = "Error in do_EvidenceSlice_inner() in copland.rs";
+//static EV_SLICE_ERROR_STR: &str = "Error in do_EvidenceSlice_inner() in copland.rs";
+static EV_SLICE_ERROR_STR_MT: &str = "Error in do_EvidenceSlice_inner() in copland.rs:  Should NOT reach mt_evt match branch!";
+static EV_SLICE_ERROR_STR_N: &str = "Error in do_EvidenceSlice_inner() in copland.rs:  Should NOT reach nonce_evt match branch!";
+static EV_SLICE_ERROR_STR_NO_ASP_ID: &str = "Error in do_EvidenceSlice_inner() in copland.rs:  ASP_ID not found in golden evidence";
+static EV_SLICE_ERROR_STR_FWD: &str = "Error in do_EvidenceSlice_inner() in copland.rs:  WRAP, UNWRAP cases NOT YET supported";
 
 fn do_EvidenceSlice_inner(
     et: &EvidenceT,
@@ -636,8 +640,8 @@ fn do_EvidenceSlice_inner(
     ps: ASP_PARAMS,
 ) -> Result<RawEvT> {
     match et {
-        EvidenceT::mt_evt => Err(anyhow!(EV_SLICE_ERROR_STR)),
-        EvidenceT::nonce_evt(_) => Err(anyhow!(EV_SLICE_ERROR_STR)),
+        EvidenceT::mt_evt => Err(anyhow!(EV_SLICE_ERROR_STR_MT)),
+        EvidenceT::nonce_evt(_) => Err(anyhow!(EV_SLICE_ERROR_STR_N)),
         EvidenceT::split_evt(et1, et2) => {
             let et1_size = et_size(&g, &et1)?;
             let et2_size = et_size(&g, &et2)?;
@@ -661,13 +665,13 @@ fn do_EvidenceSlice_inner(
             let aid = par.ASP_ID.clone();
 
             let n = match g.ASP_Types.get(&aid) {
-                None => Err(anyhow!(EV_SLICE_ERROR_STR)),
+                None => Err(anyhow!(EV_SLICE_ERROR_STR_NO_ASP_ID)),
                 Some(evsig) => {
                     match &evsig.ev_comb_sig {
                         EvCombSig::REPLACE { body: n } => Ok(*n),
                         EvCombSig::EXTEND { body: n, .. } => Ok(*n),
 
-                        _ => Err(anyhow!(EV_SLICE_ERROR_STR)), /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
+                        _ => Err(anyhow!(EV_SLICE_ERROR_STR_FWD)), /* TODO: add FWD::WRAP, FWD::UNWRAP cases once supported */
                     }
                 }
             }?;
