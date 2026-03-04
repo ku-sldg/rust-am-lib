@@ -674,8 +674,9 @@ fn do_EvidenceSlice_inner(
 
             let (r1, rest) = peel_n_rawev(n, r)?;
 
-            if (aid) == (ps.ASP_ID.clone()) {
-                Ok(r1)
+            let args = par.ASP_ARGS.clone();
+            if ((aid) == (ps.ASP_ID.clone())) && (args == ps.ASP_ARGS.clone()) {
+                    Ok(r1)   
             } else {
                 do_EvidenceSlice_inner(et2, rest, g, ps)
             }
