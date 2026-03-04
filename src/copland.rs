@@ -682,6 +682,8 @@ fn do_EvidenceSlice_inner(
             if ((aid) == (ps.ASP_ID.clone())) && (args == ps.ASP_ARGS.clone()) {
                     Ok(r1)   
             } else {
+                eprintln!("\n\nps.ASP_ARGS: {}\n\n", ps.ASP_ARGS.clone());
+                eprintln!("\n\nargs: {}\n\n", args);
                 do_EvidenceSlice_inner(et2, rest, g, ps)
             }
         }
